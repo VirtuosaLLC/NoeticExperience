@@ -6,650 +6,650 @@
   <title>𝕮𝖆𝖑² Calendar Trainer</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
   <style>
-  	html, body { height: 100%; margin: 0; padding: 0; }
-  	body {
-  	  min-height: 100vh;
-  	  background: transparent !important;
-  	  font-family: 'Orbitron', 'Courier New', Courier, monospace;
-  	  color: #fff;
-  	  padding: 0;
-  	  margin: 0;
-  	  display: flex;
-  	  flex-direction: column;
-  	  align-items: center;
-  	  justify-content: flex-start;
-  	  position: relative;
-  	  overflow-x: hidden;
-  	}
-  	#matrix-bg {
-  	  position: fixed;
-  	  z-index: 0;
-  	  left: 0; top: 0;
-  	  width: 100vw; height: 100vh;
-  	  pointer-events: none;
-  	  opacity: 1;
-  	  background: #000;
-  	}
-  	.sidebar-nav,
-  	.sidebar-toggle,
-  	.hud,
-  	.main-container,
-  	.funfact-float,
-  	.funfact-toggle-btn {
-  	  position: relative;
-  	  z-index: 1;
-  	}
-  	.hud {
-  	  width: 100vw;
-  	  max-width: 100vw;
-  	  background: linear-gradient(90deg, #111 30%, #222 80%);
-  	  box-shadow: 0 4px 20px #000a, 0 0 2px #0f0;
-  	  display: flex;
-  	  align-items: center;
-  	  justify-content: space-around;
-  	  font-size: 1.1rem;
-  	  padding: 10px 0 8px 0;
-  	  letter-spacing: 1.5px;
-  	  user-select: none;
-  	  gap: 7px;
-  	  flex-wrap: wrap;
-  	  flex-direction: row;
-  	}
-  	.hud .doomguy {
-  	  font-size: 2.2rem;
-  	  filter: drop-shadow(0 0 10px #f00a);
-  	  margin-right: 6px;
-  	}
-  	.hud .streak {
-  	  font-weight: bold;
-  	  color: #43e97b;
-  	  font-size: 1.3em;
-  	  margin-left: 8px;
-  	}
-  	.hud .timer {
-  	  color: #fff;
-  	  background: #252525;
-  	  border-radius: 7px;
-  	  box-shadow: 0 0 7px #f00a;
-  	  padding: 4px 18px;
-  	  font-size: 1.3em;
-  	  display: flex;
-  	  align-items: center;
-  	  gap: 6px;
-  	  margin: 0 7px;
-  	}
-  	.hud .pause-btn, .hud .music-btn {
-  	  background: none;
-  	  border: none;
-  	  color: #43e97b;
-  	  font-size: 1.5em;
-  	  margin-left: 7px;
-  	  cursor: pointer;
-  	  transition: color 0.2s, transform 0.2s;
-  	}
-  	.hud .pause-btn:hover, .hud .music-btn:hover {
-  	  color: #fff;
-  	  transform: scale(1.1);
-  	}
-  	.hud .century-select {
-  	  background: #43e97b;
-  	  color: #222;
-  	  border-radius: 9px;
-  	  border: none;
-  	  padding: 4px 8px;
-  	  margin-left: 5px;
-  	  font-size: 1em;
-  	  font-family: inherit;
-  	  font-weight: bold;
-  	  outline: none;
-  	  box-shadow: 0 2px 8px #0006;
-  	  cursor: pointer;
-  	}
-  	.main-container {
-  	  flex: 1;
-  	  width: 100vw;
-  	  max-width: 480px;
-  	  display: flex;
-  	  flex-direction: column;
-  	  align-items: center;
-  	  justify-content: flex-start;
-  	  padding: 28px 0 0 0;
-  	}
-  	h1 {
-  	  margin: 0 0 20px 0;
-  	  font-size: 2.1rem;
-  	  letter-spacing: 2.5px;
-  	  text-shadow: 0 0 12px #43e97b99, 0 2px 8px #f00a;
-  	  font-weight: 900;
-  	  text-align: center;
-  	  user-select: none;
-  	}
-  	#dateDisplay {
-  	  font-size: 1.6rem;
-  	  background: #222;
-  	  color: #43e97b;
-  	  border: 2.5px solid #ff3333;
-  	  border-radius: 18px;
-  	  box-shadow: 0 0 20px #ff333355, 0 0 2px #fff;
-  	  padding: 20px 34px;
-  	  margin: 18px 0 24px 0;
-  	  text-align: center;
-  	  font-weight: 700;
-  	  letter-spacing: 2px;
-  	  user-select: none;
-  	  transition: background 0.25s;
-  	}
-  	.btn-container {
-  	  display: flex;
-  	  gap: 1rem;
-  	  margin-bottom: 20px;
-  	  justify-content: center;
-  	}
-  	.btn-container button {
-  	  background: #ff3333;
-  	  color: #fff;
-  	  border: 2px solid #222;
-  	  padding: 0.7rem 2.3rem;
-  	  border-radius: 15px;
-  	  font-size: 1.3rem;
-  	  letter-spacing: 1.2px;
-  	  font-family: inherit;
-  	  cursor: pointer;
-  	  box-shadow: 0 3px 12px #0007;
-  	  transition: background 0.2s, transform 0.09s;
-  	  font-weight: bold;
-  	  outline: none;
-  	}
-  	.btn-container button:hover {
-  	  background: #ff6666;
-  	  transform: scale(1.06);
-  	}
-  	.sidebar-nav {
-  	  position: fixed;
-  	  top: 70px;
-  	  left: 20px;
-  	  z-index: 150;
-  	  display: flex;
-  	  flex-direction: column;
-  	  gap: 18px;
-  	  background: rgba(17,17,17,0.85);
-  	  border-radius: 18px;
-  	  padding: 18px 10px;
-  	  box-shadow: 0 5px 24px #000b, 0 0 2px #43e97b66;
-  	  align-items: center;
-  	  transition: left .18s;
-  	}
-  	.sidebar-nav button {
-  	  background: #ff3333;
-  	  color: #fff;
-  	  border: 2px solid #222;
-  	  padding: 0.6rem 1.6rem;
-  	  border-radius: 14px;
-  	  font-size: 0.95rem;
-  	  letter-spacing: 1.1px;
-  	  font-family: inherit;
-  	  cursor: pointer;
-  	  box-shadow: 0 3px 10px #0008;
-  	  transition: background 0.17s, transform 0.13s;
-  	  font-weight: bold;
-  	  outline: none;
-  	  width: 130px;
-  	  margin: 0;
-  	  text-align: center;
-  	  display: flex;
-  	  align-items: center;
-  	  justify-content: center;
-  	  gap: 0.4em;
-  	}
-  	.sidebar-nav button:hover {
-  	  background: #ff6666;
-  	  transform: scale(1.07);
-  	}
-  	.sidebar-nav .sidebar-label {
-  	  font-size: 1.07em;
-  	  color: #43e97b;
-  	  margin-bottom: 3px;
-  	  text-shadow: 0 2px 8px #000a;
-  	  font-weight: 800;
-  	  letter-spacing: 1.2px;
-  	  pointer-events: none;
-  	}
-  	.sidebar-toggle {
-  	  display: none;
-  	  position: fixed;
-  	  bottom: 70px;
-  	  left: 10px;
-  	  z-index: 999;
-  	  font-size: 1.6rem;
-  	  padding: 6px 12px;
-  	  background: #ff3333;
-  	  border: none;
-  	  border-radius: 10px;
-  	  color: white;
-  	  font-weight: bold;
-  	  box-shadow: 0 0 10px #000a;
-  	  cursor: pointer;
-  	}
-  	@media (max-width: 600px) {
-  	  .sidebar-toggle { display: block; }
-  	  .sidebar-nav.collapsed {
-  	    transform: translateY(100%);
-  	    opacity: 0;
-  	    pointer-events: none;
-  	  }
-  	  .sidebar-nav {
-  	    transition: transform .3s ease, opacity .3s ease;
-  	  }
-  	  .sidebar-nav {
-  	    transform: translateY(100%);
-  	    opacity: 0;
-  	    pointer-events: none;
-  	  }
-  	  .sidebar-nav:not(.collapsed) {
-  	    transform: translateY(0);
-  	    opacity: 1;
-  	    pointer-events: auto;
-  	  }
-  	}
-  	@media (max-width: 800px) {
-  	  .sidebar-nav { left: 3px; padding: 9px 4px; }
-  	  .sidebar-nav button { width: 98px; font-size: 1em; padding: 0.48rem 0.6rem; }
-  	}
-  	@media (max-width: 600px) {
-  	  .sidebar-nav {
-  	    flex-direction: row;
-  	    bottom: 0;
-  	    left: 0;
-  	    top: unset;
-  	    width: 100vw;
-  	    justify-content: center;
-  	    background: rgba(17,17,17,0.92);
-  	    border-radius: 0;
-  	    box-shadow: 0 -3px 18px #000b, 0 0 2px #43e97b66;
-  	    padding: 8px 0 10px 0;
-  	  }
-  	  .sidebar-nav .sidebar-label { display: none; }
-  	  .sidebar-nav button {
-  	    width: 33vw;
-  	    min-width: 90px;
-  	    max-width: 160px;
-  	    font-size: 1.07em;
-  	  }
-  	}
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: transparent !important;
+      font-family: 'Orbitron', 'Courier New', Courier, monospace;
+      color: #fff;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      overflow-x: hidden;
+    }
+    #matrix-bg {
+      position: fixed;
+      z-index: 0;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      opacity: 1;
+      background: #000;
+    }
+    .sidebar-nav,
+    .sidebar-toggle,
+    .hud,
+    .main-container,
+    .funfact-float,
+    .funfact-toggle-btn {
+      position: relative;
+      z-index: 1;
+    }
+    .hud {
+      width: 100vw;
+      max-width: 100vw;
+      background: linear-gradient(90deg, #111 30%, #222 80%);
+      box-shadow: 0 4px 20px #000a, 0 0 2px #0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      font-size: 1.1rem;
+      padding: 10px 0 8px 0;
+      letter-spacing: 1.5px;
+      user-select: none;
+      gap: 7px;
+      flex-wrap: wrap;
+      flex-direction: row;
+    }
+    .hud .doomguy {
+      font-size: 2.2rem;
+      filter: drop-shadow(0 0 10px #f00a);
+      margin-right: 6px;
+    }
+    .hud .streak {
+      font-weight: bold;
+      color: #43e97b;
+      font-size: 1.3em;
+      margin-left: 8px;
+    }
+    .hud .timer {
+      color: #fff;
+      background: #252525;
+      border-radius: 7px;
+      box-shadow: 0 0 7px #f00a;
+      padding: 4px 18px;
+      font-size: 1.3em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 7px;
+    }
+    .hud .pause-btn, .hud .music-btn {
+      background: none;
+      border: none;
+      color: #43e97b;
+      font-size: 1.5em;
+      margin-left: 7px;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .hud .pause-btn:hover, .hud .music-btn:hover {
+      color: #fff;
+      transform: scale(1.1);
+    }
+    .hud .century-select {
+      background: #43e97b;
+      color: #222;
+      border-radius: 9px;
+      border: none;
+      padding: 4px 8px;
+      margin-left: 5px;
+      font-size: 1em;
+      font-family: inherit;
+      font-weight: bold;
+      outline: none;
+      box-shadow: 0 2px 8px #0006;
+      cursor: pointer;
+    }
+    .main-container {
+      flex: 1;
+      width: 100vw;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 28px 0 0 0;
+    }
+    h1 {
+      margin: 0 0 20px 0;
+      font-size: 2.1rem;
+      letter-spacing: 2.5px;
+      text-shadow: 0 0 12px #43e97b99, 0 2px 8px #f00a;
+      font-weight: 900;
+      text-align: center;
+      user-select: none;
+    }
+    #dateDisplay {
+      font-size: 1.6rem;
+      background: #222;
+      color: #43e97b;
+      border: 2.5px solid #ff3333;
+      border-radius: 18px;
+      box-shadow: 0 0 20px #ff333355, 0 0 2px #fff;
+      padding: 20px 34px;
+      margin: 18px 0 24px 0;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 2px;
+      user-select: none;
+      transition: background 0.25s;
+    }
+    .btn-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .btn-container button {
+      background: #ff3333;
+      color: #fff;
+      border: 2px solid #222;
+      padding: 0.7rem 2.3rem;
+      border-radius: 15px;
+      font-size: 1.3rem;
+      letter-spacing: 1.2px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 3px 12px #0007;
+      transition: background 0.2s, transform 0.09s;
+      font-weight: bold;
+      outline: none;
+    }
+    .btn-container button:hover {
+      background: #ff6666;
+      transform: scale(1.06);
+    }
+    .sidebar-nav {
+      position: fixed;
+      top: 70px;
+      left: 20px;
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(17,17,17,0.85);
+      border-radius: 18px;
+      padding: 18px 10px;
+      box-shadow: 0 5px 24px #000b, 0 0 2px #43e97b66;
+      align-items: center;
+      transition: left .18s;
+    }
+    .sidebar-nav button {
+      background: #ff3333;
+      color: #fff;
+      border: 2px solid #222;
+      padding: 0.6rem 1.6rem;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      letter-spacing: 1.1px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 3px 10px #0008;
+      transition: background 0.17s, transform 0.13s;
+      font-weight: bold;
+      outline: none;
+      width: 130px;
+      margin: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+    }
+    .sidebar-nav button:hover {
+      background: #ff6666;
+      transform: scale(1.07);
+    }
+    .sidebar-nav .sidebar-label {
+      font-size: 1.07em;
+      color: #43e97b;
+      margin-bottom: 3px;
+      text-shadow: 0 2px 8px #000a;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      pointer-events: none;
+    }
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      left: 10px;
+      z-index: 999;
+      font-size: 1.6rem;
+      padding: 6px 12px;
+      background: #ff3333;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 0 10px #000a;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .sidebar-toggle { display: block; }
+      .sidebar-nav.collapsed {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav {
+        transition: transform .3s ease, opacity .3s ease;
+      }
+      .sidebar-nav {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav:not(.collapsed) {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+    @media (max-width: 800px) {
+      .sidebar-nav { left: 3px; padding: 9px 4px; }
+      .sidebar-nav button { width: 98px; font-size: 1em; padding: 0.48rem 0.6rem; }
+    }
+    @media (max-width: 600px) {
+      .sidebar-nav {
+        flex-direction: row;
+        bottom: 0;
+        left: 0;
+        top: unset;
+        width: 100vw;
+        justify-content: center;
+        background: rgba(17,17,17,0.92);
+        border-radius: 0;
+        box-shadow: 0 -3px 18px #000b, 0 0 2px #43e97b66;
+        padding: 8px 0 10px 0;
+      }
+      .sidebar-nav .sidebar-label { display: none; }
+      .sidebar-nav button {
+        width: 33vw;
+        min-width: 90px;
+        max-width: 160px;
+        font-size: 1.07em;
+      }
+    }
 
-  	/* --- FUN FACT FLOATING NOTIFICATION --- */
-  	.funfact-float {
-  	  position: fixed;
-  	  top: 70px;
-  	  left: calc(20px + 160px + 22px);
-  	  min-width: 260px;
-  	  max-width: 370px;
-  	  z-index: 160;
-  	  background: rgba(30,44,40,0.97);
-  	  border: 2.5px solid #43e97b;
-  	  border-radius: 18px;
-  	  box-shadow: 0 2px 30px #43e97b44, 0 0 8px #fff2;
-  	  color: #baffd1;
-  	  text-shadow: 0 1px 8px #222a, 0 0 2px #fff, 0 0 3px #43e97b;
-  	  font-size: 1.08em;
-  	  padding: 18px 20px 16px 20px;
-  	  display: flex;
-  	  flex-direction: column;
-  	  align-items: flex-start;
-  	  justify-content: flex-start;
-  	  min-height: 2.6em;
-  	  transition: left .22s, top .22s, box-shadow .24s, transform 0.3s, opacity 0.3s, max-height 0.3s, padding 0.3s;
-  	  pointer-events: none;
-  	  word-break: break-word;
-  	  overflow-wrap: break-word;
-  	  box-sizing: border-box;
-  	  user-select: text;
-  	  animation: funfact-pop 0.36s cubic-bezier(.3,2,.23,.92);
-  	  width: auto;
-  	  max-height: 600px;
-  	  opacity: 1;
-  	}
-  	.funfact-float.funfact-collapsed {
-  	  opacity: 0.6;
-  	  pointer-events: auto !important;
-  	  max-height: 0;
-  	  padding-top: 0;
-  	  padding-bottom: 0;
-  	  overflow: hidden;
-  	  transform: translateY(25px) scale(0.96);
-  	  min-height: 0;
-  	  border-top-left-radius: 0;
-  	  border-top-right-radius: 0;
-  	  transition: max-height 0.3s, opacity 0.3s, padding 0.3s, transform 0.3s;
-  	}
-  	@keyframes funfact-pop {
-  	  0% {transform: translateY(-25px) scale(0.95); opacity: 0;}
-  	  70% {transform: translateY(3px) scale(1.04); opacity: 1;}
-  	  100% {transform: translateY(0) scale(1);}
-  	}
-  	.funfact-float::before {
-  	  content: "💡";
-  	  font-size: 1.18em;
-  	  margin-right: 0.7em;
-  	  filter: drop-shadow(0 0 8px #43e97b88);
-  	  flex-shrink: 0;
-  	  opacity: 0.9;
-  	  margin-top: 0.2em;
-  	  margin-bottom: 0.4em;
-  	}
-  	.funfact-year {
-  	  color: #fff;
-  	  font-weight: 700;
-  	  font-size: 1.18em;
-  	  letter-spacing: 1.1px;
-  	  margin-bottom: 0.25em;
-  	  text-shadow: 0 2px 6px #43e97b88, 0 0 2px #fff;
-  	  line-height: 1.1;
-  	  margin-left: 0.1em;
-  	}
-  	.funfact-desc {
-  	  color: #baffd1;
-  	  font-size: 1.04em;
-  	  text-shadow: 0 1px 8px #222a, 0 0 2px #fff, 0 0 3px #43e97b;
-  	  line-height: 1.35;
-  	  word-break: break-word;
-  	  overflow-wrap: break-word;
-  	}
-  	@media (max-width: 940px) {
-  	  .funfact-float {
-  	    left: unset;
-  	    right: 0;
-  	    top: 85px;
-  	    min-width: 180px;
-  	    max-width: 97vw;
-  	    width: 97vw;
-  	    padding: 13px 2vw 13px 2vw;
-  	    font-size: 1em;
-  	  }
-  	}
-  	@media (max-width: 600px) {
-  	  .funfact-float {
-  	    position: fixed;
-  	    top: unset;
-  	    left: 0;
-  	    right: 0;
-  	    bottom: 0px;
-  	    min-width: 0;
-  	    max-width: 100vw;
-  	    width: 100vw;
-  	    border-radius: 0;
-  	    border-bottom: none !important;
-  	    padding: 12px 5vw 12px 7vw;
-  	    box-shadow: 0 -1px 22px #43e97b44, 0 0 8px #fff2;
-  	    font-size: 0.99em;
-  	    overflow-wrap: break-word;
-  	    word-break: break-word;
-  	    box-sizing: border-box;
-  	    pointer-events: auto;
-  	    transition: max-height 0.3s, opacity 0.3s, padding 0.3s, transform 0.3s;
-  	    z-index: 300;
-  	  }
-  	  .funfact-float.funfact-collapsed {
-  	    max-height: 0 !important;
-  	    opacity: 0.3 !important;
-  	    pointer-events: auto;
-  	    padding-top: 0 !important;
-  	    padding-bottom: 0 !important;
-  	    min-height: 0 !important;
-  	    border-radius: 0 0 0 0 !important;
-  	    border-top: none !important;
-  	    transform: translateY(25px) scale(0.96);
-  	  }
-  	}
-  	/* -- Fun Fact Toggle Button -- */
-  	.funfact-toggle-btn {
-  	  display: none;
-  	  position: fixed;
-  	  right: 16px;
-  	  bottom: 74px;
-  	  z-index: 401;
-  	  background: #282;
-  	  color: #fff;
-  	  border: none;
-  	  border-radius: 50%;
-  	  width: 48px;
-  	  height: 48px;
-  	  font-size: 1.7em;
-  	  font-family: inherit;
-  	  font-weight: bold;
-  	  box-shadow: 0 0 7px #43e97b88, 0 2px 9px #000c;
-  	  cursor: pointer;
-  	  transition: background 0.15s, color 0.15s, box-shadow 0.2s, opacity 0.25s;
-  	  user-select: none;
-  	  outline: none;
-  	  display: flex;
-  	  align-items: center;
-  	  justify-content: center;
-  	  opacity: 0.9;
-  	}
-  	.funfact-toggle-btn:active {
-  	  background: #16bb67;
-  	  color: #fff;
-  	  opacity: 1;
-  	}
-  	@media (max-width: 600px) {
-  	  .funfact-toggle-btn { display: flex; }
-  	}
+    /* --- FUN FACT FLOATING NOTIFICATION --- */
+    .funfact-float {
+      position: fixed;
+      top: 70px;
+      left: calc(20px + 160px + 22px);
+      min-width: 260px;
+      max-width: 370px;
+      z-index: 160;
+      background: rgba(30,44,40,0.97);
+      border: 2.5px solid #43e97b;
+      border-radius: 18px;
+      box-shadow: 0 2px 30px #43e97b44, 0 0 8px #fff2;
+      color: #baffd1;
+      text-shadow: 0 1px 8px #222a, 0 0 2px #fff, 0 0 3px #43e97b;
+      font-size: 1.08em;
+      padding: 18px 20px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      min-height: 2.6em;
+      transition: left .22s, top .22s, box-shadow .24s, transform 0.3s, opacity 0.3s, max-height 0.3s, padding 0.3s;
+      pointer-events: none;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      box-sizing: border-box;
+      user-select: text;
+      animation: funfact-pop 0.36s cubic-bezier(.3,2,.23,.92);
+      width: auto;
+      max-height: 600px;
+      opacity: 1;
+    }
+    .funfact-float.funfact-collapsed {
+      opacity: 0.6;
+      pointer-events: auto !important;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+      transform: translateY(25px) scale(0.96);
+      min-height: 0;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      transition: max-height 0.3s, opacity 0.3s, padding 0.3s, transform 0.3s;
+    }
+    @keyframes funfact-pop {
+      0% {transform: translateY(-25px) scale(0.95); opacity: 0;}
+      70% {transform: translateY(3px) scale(1.04); opacity: 1;}
+      100% {transform: translateY(0) scale(1);}
+    }
+    .funfact-float::before {
+      content: "💡";
+      font-size: 1.18em;
+      margin-right: 0.7em;
+      filter: drop-shadow(0 0 8px #43e97b88);
+      flex-shrink: 0;
+      opacity: 0.9;
+      margin-top: 0.2em;
+      margin-bottom: 0.4em;
+    }
+    .funfact-year {
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.18em;
+      letter-spacing: 1.1px;
+      margin-bottom: 0.25em;
+      text-shadow: 0 2px 6px #43e97b88, 0 0 2px #fff;
+      line-height: 1.1;
+      margin-left: 0.1em;
+    }
+    .funfact-desc {
+      color: #baffd1;
+      font-size: 1.04em;
+      text-shadow: 0 1px 8px #222a, 0 0 2px #fff, 0 0 3px #43e97b;
+      line-height: 1.35;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+    @media (max-width: 940px) {
+      .funfact-float {
+        left: unset;
+        right: 0;
+        top: 85px;
+        min-width: 180px;
+        max-width: 97vw;
+        width: 97vw;
+        padding: 13px 2vw 13px 2vw;
+        font-size: 1em;
+      }
+    }
+    @media (max-width: 600px) {
+      .funfact-float {
+        position: fixed;
+        top: unset;
+        left: 0;
+        right: 0;
+        bottom: 0px;
+        min-width: 0;
+        max-width: 100vw;
+        width: 100vw;
+        border-radius: 0;
+        border-bottom: none !important;
+        padding: 12px 5vw 12px 7vw;
+        box-shadow: 0 -1px 22px #43e97b44, 0 0 8px #fff2;
+        font-size: 0.99em;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        box-sizing: border-box;
+        pointer-events: auto;
+        transition: max-height 0.3s, opacity 0.3s, padding 0.3s, transform 0.3s;
+        z-index: 300;
+      }
+      .funfact-float.funfact-collapsed {
+        max-height: 0 !important;
+        opacity: 0.3 !important;
+        pointer-events: auto;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        min-height: 0 !important;
+        border-radius: 0 0 0 0 !important;
+        border-top: none !important;
+        transform: translateY(25px) scale(0.96);
+      }
+    }
+    /* -- Fun Fact Toggle Button -- */
+    .funfact-toggle-btn {
+      display: none;
+      position: fixed;
+      right: 16px;
+      bottom: 74px;
+      z-index: 401;
+      background: #282;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 1.7em;
+      font-family: inherit;
+      font-weight: bold;
+      box-shadow: 0 0 7px #43e97b88, 0 2px 9px #000c;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, box-shadow 0.2s, opacity 0.25s;
+      user-select: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.9;
+    }
+    .funfact-toggle-btn:active {
+      background: #16bb67;
+      color: #fff;
+      opacity: 1;
+    }
+    @media (max-width: 600px) {
+      .funfact-toggle-btn { display: flex; }
+    }
 
-  	#dayButtons {
-  	  display: flex;
-  	  flex-wrap: wrap;
-  	  justify-content: center;
-  	  gap: 1.2em;
-  	  max-width: 500px;
-  	  margin: 0 auto 0 auto;
-  	}
-  	#dayButtons button {
-  	  position: relative;
-  	  background: radial-gradient(circle at 60% 40%, #43e97b 70%, #3bc36b 100%);
-  	  border: 4px solid #ff3333;
-  	  color: #222;
-  	  border-radius: 20%;
-  	  width: 120px;
-  	  height: 92px;
-  	  font-size: 1rem;
-  	  font-family: inherit;
-  	  font-weight: 800;
-  	  letter-spacing: 1.2px;
-  	  margin: 13px 7px;
-  	  cursor: pointer;
-  	  box-shadow: 0 4px 16px #0009, 0 0 1px #fff;
-  	  outline: none;
-  	  transition: background 0.14s, box-shadow 0.16s, transform 0.13s;
-  	  z-index: 3;
-  	  overflow: hidden;
-  	  display: flex;
-  	  align-items: center;
-  	  justify-content: center;
-  	  user-select: none;
-  	}
-  	#dayButtons button .fragments, #dayButtons button .emoji-burst {
-  	  pointer-events: none;
-  	  position: absolute;
-  	  left: 0; top: 0;
-  	  width: 100%; height: 100%;
-  	  z-index: 11;
-  	  display: block;
-  	  overflow: visible;
-  	}
-  	.fragment {
-  	  position: absolute;
-  	  bottom: 45%;
-  	  left: 50%;
-  	  width: 22px;
-  	  height: 22px;
-  	  border-radius: 7px;
-  	  background: linear-gradient(135deg, #ff3333 60%, #222 100%);
-  	  opacity: 0.96;
-  	  pointer-events: none;
-  	  z-index: 12;
-  	  transform: translate(-50%,0) scale(1.45) rotate(0deg);
-  	  animation: fragment-fall 1.2s cubic-bezier(.61,1.7,.43,.99) forwards;
-  	  box-shadow: 0 0 12px #fff8, 0 0 3px #43e97b88;
-  	}
-  	.fragment.green {
-  	  background: linear-gradient(135deg, #43e97b 55%, #3bc36b 100%);
-  	  box-shadow: 0 0 15px #43e97bb7, 0 0 1px #fff;
-  	  opacity: 0.98;
-  	}
-  	@keyframes fragment-fall {
-  	  0% {
-  	    opacity: 1;
-  	    transform: translate(-50%, 0) scale(1.45) rotate(0deg);
-  	  }
-  	  70% {
-  	    opacity: 1;
-  	  }
-  	  85% {
-  	    opacity: 0.9;
-  	  }
-  	  100% {
-  	    opacity: 0;
-  	    transform:
-  	      translate(
-  	        calc(-50% + var(--frag-x, 0px)),
-  	        calc(250px + var(--frag-y, 0px))
-  	      )
-  	      scale(0.85)
-  	      rotate(var(--frag-rot, 20deg));
-  	  }
-  	}
-  	.emoji-burst-emoji {
-  	  position: absolute;
-  	  left: 50%;
-  	  top: 50%;
-  	  font-size: 2.2em;
-  	  pointer-events: none;
-  	  opacity: 0.95;
-  	  animation: emoji-burst-pop 1.1s cubic-bezier(.6,1.6,.4,1) forwards;
-  	  will-change: transform, opacity;
-  	  filter: drop-shadow(0 1px 8px #fff8);
-  	  user-select: none;
-  	}
-  	@keyframes emoji-burst-pop {
-  	  0% {
-  	    opacity: 1;
-  	    transform: translate(-50%, -50%) scale(0.7) rotate(0deg);
-  	  }
-  	  70% {
-  	    opacity: 1;
-  	    transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(1.18) rotate(var(--burst-rot, 0deg));
-  	  }
-  	  100% {
-  	    opacity: 0;
-  	    transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(0.95) rotate(var(--burst-rot, 0deg));
-  	  }
-  	}
-  	#dayButtons button:hover {
-  	  background: #80ffb4;
-  	  transform: scale(1.10);
-  	  box-shadow: 0 6px 22px #43e97baa, 0 0 4px #fff;
-  	}
-  	#dayButtons button.clicked {
-  	  background: #f00;
-  	  color: #fff;
-  	  animation: recoil 0.18s cubic-bezier(.78,-0.07,0,1.43);
-  	}
-  	@keyframes recoil {
-  	  0% {transform: scale(1);}
-  	  40% {transform: scale(0.95);}
-  	  100% {transform: scale(1);}
-  	}
-  	#dayButtons button.correct {
-  	  background: linear-gradient(145deg,#43e97b 70%, #3bc36b 120%);
-  	  color: #fff;
-  	  border: 4px solid #ffda00;
-  	  box-shadow: 0 0 15px #43e97baa, 0 0 4px #fff;
-  	  animation: wrongshake 0.19s;
-  	}
-  	#dayButtons button.wrong {
-  	  background: #f00 !important;
-  	  border: 4px solid #900;
-  	  color: #fff;
-  	  animation: wrongshake 0.19s;
-  	}
-  	@keyframes wrongshake {
-  	  0%,100%{transform:translate(0,0);}
-  	  30%{transform:translate(-8px,2px);}
-  	  60%{transform:translate(6px,-4px);}
-  	}
-  	#strikeDisplay {
-  	  display: flex;
-  	  flex-direction: column;
-  	  align-items: center;
-  	  background: rgba(44,0,0,0.94);
-  	  color: #fff;
-  	  font-size: 2.2rem;
-  	  font-weight: bold;
-  	  padding: 28px 38px;
-  	  border-radius: 24px;
-  	  box-shadow: 0 4px 40px #f003, 0 0 5px #fff;
-  	  margin-top: 34px;
-  	  text-shadow: 0 0 10px #f00a, 0 0 3px #fff;
-  	  border: 3px solid #ff3333;
-  	  z-index: 4;
-  	  position: relative;
-  	  transition: opacity .25s;
-  	}
-  	#strikeDisplay.hidden { display: none; }
+    #dayButtons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.2em;
+      max-width: 500px;
+      margin: 0 auto 0 auto;
+    }
+    #dayButtons button {
+      position: relative;
+      background: radial-gradient(circle at 60% 40%, #43e97b 70%, #3bc36b 100%);
+      border: 4px solid #ff3333;
+      color: #222;
+      border-radius: 20%;
+      width: 120px;
+      height: 92px;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      margin: 13px 7px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px #0009, 0 0 1px #fff;
+      outline: none;
+      transition: background 0.14s, box-shadow 0.16s, transform 0.13s;
+      z-index: 3;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    #dayButtons button .fragments, #dayButtons button .emoji-burst {
+      pointer-events: none;
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      z-index: 11;
+      display: block;
+      overflow: visible;
+    }
+    .fragment {
+      position: absolute;
+      bottom: 45%;
+      left: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #ff3333 60%, #222 100%);
+      opacity: 0.96;
+      pointer-events: none;
+      z-index: 12;
+      transform: translate(-50%,0) scale(1.45) rotate(0deg);
+      animation: fragment-fall 1.2s cubic-bezier(.61,1.7,.43,.99) forwards;
+      box-shadow: 0 0 12px #fff8, 0 0 3px #43e97b88;
+    }
+    .fragment.green {
+      background: linear-gradient(135deg, #43e97b 55%, #3bc36b 100%);
+      box-shadow: 0 0 15px #43e97bb7, 0 0 1px #fff;
+      opacity: 0.98;
+    }
+    @keyframes fragment-fall {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1.45) rotate(0deg);
+      }
+      70% {
+        opacity: 1;
+      }
+      85% {
+        opacity: 0.9;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(
+            calc(-50% + var(--frag-x, 0px)),
+            calc(250px + var(--frag-y, 0px))
+          )
+          scale(0.85)
+          rotate(var(--frag-rot, 20deg));
+      }
+    }
+    .emoji-burst-emoji {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      font-size: 2.2em;
+      pointer-events: none;
+      opacity: 0.95;
+      animation: emoji-burst-pop 1.1s cubic-bezier(.6,1.6,.4,1) forwards;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 1px 8px #fff8);
+      user-select: none;
+    }
+    @keyframes emoji-burst-pop {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.7) rotate(0deg);
+      }
+      70% {
+        opacity: 1;
+        transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(1.18) rotate(var(--burst-rot, 0deg));
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(0.95) rotate(var(--burst-rot, 0deg));
+      }
+    }
+    #dayButtons button:hover {
+      background: #80ffb4;
+      transform: scale(1.10);
+      box-shadow: 0 6px 22px #43e97baa, 0 0 4px #fff;
+    }
+    #dayButtons button.clicked {
+      background: #f00;
+      color: #fff;
+      animation: recoil 0.18s cubic-bezier(.78,-0.07,0,1.43);
+    }
+    @keyframes recoil {
+      0% {transform: scale(1);}
+      40% {transform: scale(0.95);}
+      100% {transform: scale(1);}
+    }
+    #dayButtons button.correct {
+      background: linear-gradient(145deg,#43e97b 70%, #3bc36b 120%);
+      color: #fff;
+      border: 4px solid #ffda00;
+      box-shadow: 0 0 15px #43e97baa, 0 0 4px #fff;
+      animation: wrongshake 0.19s;
+    }
+    #dayButtons button.wrong {
+      background: #f00 !important;
+      border: 4px solid #900;
+      color: #fff;
+      animation: wrongshake 0.19s;
+    }
+    @keyframes wrongshake {
+      0%,100%{transform:translate(0,0);}
+      30%{transform:translate(-8px,2px);}
+      60%{transform:translate(6px,-4px);}
+    }
+    #strikeDisplay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(44,0,0,0.94);
+      color: #fff;
+      font-size: 2.2rem;
+      font-weight: bold;
+      padding: 28px 38px;
+      border-radius: 24px;
+      box-shadow: 0 4px 40px #f003, 0 0 5px #fff;
+      margin-top: 34px;
+      text-shadow: 0 0 10px #f00a, 0 0 3px #fff;
+      border: 3px solid #ff3333;
+      z-index: 4;
+      position: relative;
+      transition: opacity .25s;
+    }
+    #strikeDisplay.hidden { display: none; }
 
-  	.shake { animation: screenShake 0.23s 1; }
-  	.shake2 { animation: screenShake 0.5s 1; }
-  	@keyframes screenShake {
-  	  0%, 100% { transform: translate(0, 0);}
-  	  20% { transform: translate(-10px, 3px) rotate(-2.5deg);}
-  	  40% { transform: translate(7px, -8px) rotate(3deg);}
-  	  60% { transform: translate(-5px, 2px) rotate(-2deg);}
-  	  80% { transform: translate(5px, 0px) rotate(1.5deg);}
-  	}
-  	@media (max-width: 600px) {
-  	  .main-container {padding: 10px 0;}
-  	  h1 {font-size: 1.1rem;}
-  	  #dateDisplay {font-size: 1.1rem; padding: 12px 8px;}
-  	  #strikeDisplay {font-size: 1.1rem; padding: 13px 10px;}
-  	  .btn-container button {
-  	    padding: 0.8rem 2.4rem;
-  	    font-size: 1.1rem;
-  	  }
-  	  #dayButtons button {
-  	    font-size: 1rem;
-  	    width: 140px;
-  	    height: 50px;
-  	  }
-  	  .hud .doomguy {font-size: 1.1rem;}
-  	}
-  	.voice-ui{
-  	  margin: 8px 0 0 0;
-  	  background: #171a17;
-  	  border: 2px solid #43e97b;
-  	  border-radius: 14px;
-  	  padding: 10px 14px;
-  	  width: min(480px, 92vw);
-  	  box-shadow: 0 4px 16px #0008, 0 0 2px #fff2;
-  	}
-  	#voiceStatus{
-  	  color:#baffd1;
-  	  font-weight:700;
-  	  letter-spacing: .5px;
-  	  text-shadow: 0 1px 6px #000a, 0 0 2px #43e97b;
-  	}
-  	#voiceRoundTimer{
-  	  margin-top: 6px;
-  	  font-weight: 800;
-  	  color: #ffda00;
-  	  text-shadow: 0 0 6px #000, 0 0 2px #fff;
-  	}
+    .shake { animation: screenShake 0.23s 1; }
+    .shake2 { animation: screenShake 0.5s 1; }
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0);}
+      20% { transform: translate(-10px, 3px) rotate(-2.5deg);}
+      40% { transform: translate(7px, -8px) rotate(3deg);}
+      60% { transform: translate(-5px, 2px) rotate(-2deg);}
+      80% { transform: translate(5px, 0px) rotate(1.5deg);}
+    }
+    @media (max-width: 600px) {
+      .main-container {padding: 10px 0;}
+      h1 {font-size: 1.1rem;}
+      #dateDisplay {font-size: 1.1rem; padding: 12px 8px;}
+      #strikeDisplay {font-size: 1.1rem; padding: 13px 10px;}
+      .btn-container button {
+        padding: 0.8rem 2.4rem;
+        font-size: 1.1rem;
+      }
+      #dayButtons button {
+        font-size: 1rem;
+        width: 140px;
+        height: 50px;
+      }
+      .hud .doomguy {font-size: 1.1rem;}
+    }
+    .voice-ui{
+      margin: 8px 0 0 0;
+      background: #171a17;
+      border: 2px solid #43e97b;
+      border-radius: 14px;
+      padding: 10px 14px;
+      width: min(480px, 92vw);
+      box-shadow: 0 4px 16px #0008, 0 0 2px #fff2;
+    }
+    #voiceStatus{
+      color:#baffd1;
+      font-weight:700;
+      letter-spacing: .5px;
+      text-shadow: 0 1px 6px #000a, 0 0 2px #43e97b;
+    }
+    #voiceRoundTimer{
+      margin-top: 6px;
+      font-weight: 800;
+      color: #ffda00;
+      text-shadow: 0 0 6px #000, 0 0 2px #fff;
+    }
 
-  	.floating-burst {
-  	  pointer-events: none !important;
-  	  width: 0 !important;
-  	  height: 0 !important;
-  	}
+    .floating-burst {
+      pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
 
   </style>
 </head>
@@ -683,11 +683,11 @@
     <button class="pause-btn" id="hudPauseBtn" onclick="togglePause()" aria-label="Pause or resume timer">⏸</button>
     <button class="music-btn" id="musicPauseBtn" onclick="toggleMusic()" aria-label="Pause or play music">🎵⏸</button>
     <select id="musicSelect" class="century-select" aria-label="Choose background music">
-    	<option value="doom">DOOM</option>
-    	<option value="lofi">Beethoven</option>
-    	<option value="cyberpunk">Nitro</option>
-    	<option value="relax">Relax</option>
-    	<option value="think">Think</option>
+      <option value="doom">DOOM</option>
+      <option value="lofi">Beethoven</option>
+      <option value="cyberpunk">Nitro</option>
+      <option value="relax">Relax</option>
+      <option value="think">Think</option>
     </select>
     <select id="centurySelect" class="century-select" aria-label="Choose century">
       <option value="1600">1600s</option>
@@ -726,6 +726,12 @@
       <option value="4900">4900s</option>
       <option value="5000">5000s</option>
     </select>
+    <select id="factCategorySelect" class="century-select" aria-label="Choose historic fun fact category" title="Historic Fun Fact Category">
+      <option value="lists" selected>Facts: Lists</option>
+      <option value="sports">Facts: Sports</option>
+      <option value="horror">Facts: Horror</option>
+      <option value="war">Facts: War</option>
+    </select>
   </div>
 
   <div class="main-container">
@@ -750,11 +756,6 @@
     <div id="voiceUI" class="voice-ui" aria-live="polite" style="display:none;">
       <div id="voiceStatus">🎧 Voice idle. Click “Voice Mode” to start.</div>
       <div id="voiceRoundTimer">⏱️ Reaction: 0.0 s</div>
-    </div>
-
-    <div id="voicePickerContainer" style="margin:10px 0 0 0; display:none;">
-      <label for="voiceSelect" style="color:#baffd1;">🗣️ Voice:</label>
-      <select id="voiceSelect" style="margin-left:4px; padding:2px 8px; border-radius:6px;"></select>
     </div>
 
     <div id="dayButtons" class="day-options"></div>
@@ -802,6 +803,63 @@
     // --- DOM SHORTCUTS ---
     const musicPauseBtn = document.getElementById('musicPauseBtn');
     const musicSelect = document.getElementById('musicSelect');
+
+    // --- HISTORIC FUN FACT CATEGORY (Lists / Sports / Horror / War) ---
+    const factCategorySelect = document.getElementById('factCategorySelect');
+    let currentFactCategory = (factCategorySelect && factCategorySelect.value) ? factCategorySelect.value : 'lists';
+
+    function syncFactCategoryUI() {
+      if (!factCategorySelect) return;
+      factCategorySelect.disabled = !historicMode;
+      factCategorySelect.style.opacity = historicMode ? '1' : '0.45';
+      currentFactCategory = factCategorySelect.value || 'lists';
+    }
+
+    if (factCategorySelect) {
+      factCategorySelect.addEventListener('change', () => {
+        currentFactCategory = factCategorySelect.value || 'lists';
+
+        // If we're in historic mode, refresh the current round without resetting streak/time.
+        // (Switching categories should feel instant.)
+        if (!(historicMode && !isGameOver && !isPaused && !voiceRoundActive)) return;
+
+        const prevTime = timeRemaining;
+        clearInterval(timerInterval);
+
+        generateDate().then(({ date, funFactText, funFactImage }) => {
+          // If we couldn't find a matching fact, don't softlock the run—just show a message.
+          if (!date) {
+            document.getElementById('funFact').innerHTML = `<div class="funfact-desc">${noValidDateMessage()}</div>`;
+            timeRemaining = prevTime;
+            startTimer();
+            return;
+          }
+
+          currentDate = date;
+          const options = { year: 'numeric', month: 'long', day: 'numeric' };
+          document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
+
+          if (historicMode && funFactText) {
+            let html = '';
+            if (funFactImage) {
+              html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
+                <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
+              </div>`;
+            }
+            html += `<div class="funfact-desc">${funFactText}</div>`;
+            document.getElementById('funFact').innerHTML = html;
+          } else {
+            document.getElementById('funFact').innerHTML = '';
+          }
+
+          renderDayButtons();
+          timeRemaining = prevTime;
+          startTimer();
+          updateDoomguyFace();
+        });
+      });
+    }
+
 
     // --- UTIL: Fetch Wikipedia Image for Event ---
     async function fetchWikipediaImage(wikipediaLinks) {
@@ -971,6 +1029,7 @@
       }
       updateFunFactToggleBtn();
       updateFunFactVisibility();
+      syncFactCategoryUI();
     });
     window.addEventListener('beforeunload', () => {
       Object.values(musicTracks).forEach(m => m.pause());
@@ -988,7 +1047,15 @@
       document.getElementById('doomguy-face').textContent = doomGuyFaces[idx];
     }
 
-    function startGame() {
+    
+    function noValidDateMessage() {
+      if (!historicMode) return "No valid date found!";
+      const cat = (currentFactCategory || 'lists').toLowerCase();
+      if (cat === 'lists') return "No historic fact found for that century. Try another century.";
+      return `No ${cat} historic fact found for that century. Try another category or century.`;
+    }
+
+function startGame() {
       streakCount = 0;
       isGameOver = false;
       timeRemaining = 30;
@@ -1000,7 +1067,7 @@
 
       generateDate().then(({ date, funFactText, funFactImage }) => {
         if (!date) {
-          document.getElementById('dateDisplay').textContent = "No valid date found!";
+          document.getElementById('dateDisplay').textContent = noValidDateMessage();
           document.getElementById('funFact').innerHTML = "";
           renderDayButtons();
           return;
@@ -1036,28 +1103,91 @@
       document.getElementById('historicModeBtn').style.background = historicMode ? "#ffe066" : "#43e97b";
       document.getElementById('historicModeBtn').style.color = "#222";
       updateFunFactVisibility();
+      syncFactCategoryUI();
       startGame();
     }
 
-    function isMorbidOrWarFact(desc) {
-      if(!desc) return false;
-      desc = desc.toLowerCase();
+    // --- HISTORIC FUN FACT CATEGORY FILTERS ---
+    function isMorbidFact(desc) {
+      if (!desc) return false;
+      const d = desc.toLowerCase();
       const morbidWords = [
         'died', 'death', 'killed', 'executed', 'assassinated', 'massacre', 'murder',
         'suicide', 'hanged', 'shot', 'bomb', 'attack', 'explosion', 'disaster', 'tragedy',
-        'dead', 'casualties', 'genocide', 'executed', 'collapse', 'burned', 'crash' , 'kills' , 'jewish'
+        'dead', 'casualties', 'genocide', 'collapse', 'burned', 'crash', 'kills'
       ];
+      return morbidWords.some(w => d.includes(w));
+    }
+
+    function isWarFact(desc) {
+      if (!desc) return false;
+      const d = desc.toLowerCase();
       const warWords = [
         'war', 'battle', 'siege', 'invasion', 'revolution', 'conflict', 'fought', 'army',
         'navy', 'military', 'soldier', 'forces', 'troops', 'hostilities', 'uprising',
         'rebellion', 'retreat', 'surrender', 'allied', 'nazi', 'world war', 'civil war'
       ];
-      return morbidWords.some(w => desc.includes(w)) || warWords.some(w => desc.includes(w));
+      return warWords.some(w => d.includes(w));
     }
 
+    function isSportsFact(desc) {
+      if (!desc) return false;
+      const d = desc.toLowerCase();
+      const sportsWords = [
+        'olympic', 'olympics', 'world cup',
+        'championship', 'champion', 'tournament',
+        'final', 'finals',
+        'league', 'season',
+        'match', 'game', 'fixture',
+        'goal', 'score', 'scored', 'record',
+        'medal', 'gold medal', 'silver medal', 'bronze medal',
+        'athlete', 'athletes',
+        'team', 'coach', 'manager',
+        'stadium', 'arena',
 
+        // sports
+        'football', 'soccer', 'basketball', 'baseball',
+        'hockey', 'tennis', 'golf',
+        'boxing', 'mma', 'ufc',
+        'cricket', 'rugby',
+        'formula one', 'f1', 'grand prix',
+        'marathon', 'race', 'racing', 'relay', 'sprint',
+      ];
 
+      return sportsWords.some(w => d.includes(w));
+    }
 
+    function isHorrorFact(desc) {
+      if (!desc) return false;
+      const d = desc.toLowerCase();
+      const horrorWords = [
+        'halloween', 'ghost', 'haunted', 'witch', 'witches', 'demon', 'devil', 'satan',
+        'vampire', 'werewolf', 'zombie', 'monster', 'curse', 'cursed', 'occult', 'horror',
+        'spooky', 'frankenstein', 'dracula', 'kidnapping','cult','mystery', 'urban legend', 'legend', 'unsolved',
+        'mysterious', 'unexplained',
+        'unsolved', 'cold case',
+        'disturbing', 'chilling',
+        'creepy', 'eerie', 'unsolved mystery', 'unsolved case',
+    'mystery', 'mysterious disappearance',
+    'true crime', 'sacrifice','ritual'
+      ];
+      // "Horror" can include spooky + morbid/creepy real-world events, but we exclude wars.
+      return horrorWords.some(w => d.includes(w)) || (isMorbidFact(d) && (d.includes('murder') || d.includes('massacre') || d.includes('serial') || d.includes('killer')));
+    }
+
+    // Category rules:
+    // - lists: your original "safe" fun facts (exclude morbid + war)
+    // - sports: sports-only (exclude war)
+    // - horror: spooky-only (exclude war)
+    // - war: war-only
+    function matchesHistoricCategory(desc, category) {
+      const cat = (category || 'lists').toLowerCase();
+      if (cat === 'war') return isWarFact(desc);
+      if (cat === 'sports') return isSportsFact(desc) && !isWarFact(desc);
+      if (cat === 'horror') return isHorrorFact(desc) && !isWarFact(desc);
+      // lists (default): "safe" fun facts (exclude morbid + war)
+      return !isMorbidFact(desc) && !isWarFact(desc);
+    }
 
     function loadHistoricDatesAndStart() {
       availableHistoricDates = [];
@@ -1118,10 +1248,12 @@
         if (historicMode) {
           const century = parseInt(document.getElementById('centurySelect').value);
           const years = Array.from({ length: 100 }, (_, i) => century + i);
+          const category = (currentFactCategory || 'lists').toLowerCase();
+          const maxTries = (category === 'lists') ? 60 : (category === 'sports' ? 160 : (category === 'horror' ? 200 : 180));
           let tries = 0;
           function tryRandomDay() {
             tries++;
-            if (tries > 15) {
+            if (tries > maxTries) {
               resolve({ date: null, funFactText: null, funFactImage: null });
               return;
             }
@@ -1136,7 +1268,7 @@
                   const candidates = data.events.filter(ev =>
                     years.includes(parseInt(ev.year)) &&
                     ev.description.length > 30 &&
-                    !isMorbidOrWarFact(ev.description)
+                    matchesHistoricCategory(ev.description, category)
                   );
                   if (candidates.length > 0) {
                     found = candidates[Math.floor(Math.random() * candidates.length)];
@@ -1216,9 +1348,6 @@
         void document.body.offsetWidth;
         document.body.classList.add('shake');
 
-        // --- REMOVE this: spawnEmojiBurstAtButton(buttonElement); ---
-        // spawnEmojiBurstAtButton(buttonElement);
-
         // --- Instead, show the green overlay! ---
         showCorrectOverlay();
 
@@ -1229,7 +1358,7 @@
           setTimeout(() => {
             generateDate().then(({ date, funFactText, funFactImage }) => {
               if (!date) {
-                document.getElementById('dateDisplay').textContent = "No valid date found!";
+                document.getElementById('dateDisplay').textContent = noValidDateMessage();
                 document.getElementById('funFact').innerHTML = "";
                 renderDayButtons();
                 return;
@@ -1726,8 +1855,6 @@
           let lastTranscript = "";
           let allWordsHeard = [];
 
-          let recognition;
-
           const startOnce = () => {
             recognition = new ASR();
             recognition.lang = 'en-US';
@@ -1882,15 +2009,12 @@
 
       // Bind the button (autoplay enabled)
       document.getElementById('voiceModeBtn').onclick = () => {
-      	unlockGunshotAudio();               // 👈 unlock with a real click
-      	voiceModeShouldLoop = true;
+        unlockGunshotAudio();               // 👈 unlock with a real click
+        voiceModeShouldLoop = true;
 
         startVoiceRound(true);
       };
 
-
-
-
-    </script>
+  </script>
 </body>
 </html>
