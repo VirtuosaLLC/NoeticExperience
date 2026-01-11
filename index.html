@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>𝕮𝖆𝖑² Calendar Trainer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <style>
+  	html, body { height: 100%; margin: 0; padding: 0; }
+  	body {
+  	  min-height: 100vh;
+  	  background: transparent !important;
+  	  font-family: 'Orbitron', 'Courier New', Courier, monospace;
+  	  color: #fff;
+  	  padding: 0;
+  	  margin: 0;
+  	  display: flex;
+  	  flex-direction: column;
+  	  align-items: center;
+  	  justify-content: flex-start;
+  	  position: relative;
+  	  overflow-x: hidden;
+  	}
+  	#matrix-bg {
+  	  position: fixed;
+  	  z-index: 0;
+  	  left: 0; top: 0;
+  	  width: 100vw; height: 100vh;
+  	  pointer-events: none;
+  	  opacity: 1;
+  	  background: #000;
+  	}
+  	.sidebar-nav,
+  	.sidebar-toggle,
+  	.hud,
+  	.main-container,
+  	.funfact-float,
+  	.funfact-toggle-btn {
+  	  position: relative;
+  	  z-index: 1;
+  	}
+  	.hud {
+  	  width: 100vw;
+  	  max-width: 100vw;
+  	  background: linear-gradient(90deg, #111 30%, #222 80%);
+  	  box-shadow: 0 4px 20px #000a, 0 0 2px #0f0;
+  	  display: flex;
+  	  align-items: center;
+  	  justify-content: space-around;
+  	  font-size: 1.1rem;
+  	  padding: 10px 0 8px 0;
+  	  letter-spacing: 1.5px;
+  	  user-select: none;
+  	  gap: 7px;
+  	  flex-wrap: wrap;
+  	  flex-direction: row;
+  	}
+  	.hud .doomguy {
+  	  font-size: 2.2rem;
+  	  filter: drop-shadow(0 0 10px #f00a);
+  	  margin-right: 6px;
+  	}
+  	.hud .streak {
+  	  font-weight: bold;
+  	  color: #43e97b;
+  	  font-size: 1.3em;
+  	  margin-left: 8px;
+  	}
+  	.hud .timer {
+  	  color: #fff;
+  	  background: #252525;
+  	  border-radius: 7px;
+  	  box-shadow: 0 0 7px #f00a;
+  	  padding: 4px 18px;
+  	  font-size: 1.3em;
+  	  display: flex;
+  	  align-items: center;
+  	  gap: 6px;
+  	  margin: 0 7px;
+  	}
+  	.hud .pause-btn, .hud .music-btn {
+  	  background: none;
+  	  border: none;
+  	  color: #43e97b;
+  	  font-size: 1.5em;
+  	  margin-left: 7px;
+  	  cursor: pointer;
+  	  transition: color 0.2s, transform 0.2s;
+  	}
+  	.hud .pause-btn:hover, .hud .music-btn:hover {
+  	  color: #fff;
+  	  transform: scale(1.1);
+  	}
+  	.hud .century-select {
+  	  background: #43e97b;
+  	  color: #222;
+  	  border-radius: 9px;
+  	  border: none;
+  	  padding: 4px 8px;
+  	  margin-left: 5px;
+  	  font-size: 1em;
+  	  font-family: inherit;
+  	  font-weight: bold;
+  	  outline: none;
+  	  box-shadow: 0 2px 8px #0006;
+  	  cursor: pointer;
+  	}
+  	.main-container {
+  	  flex: 1;
+  	  width: 100vw;
+  	  max-width: 480px;
+  	  display: flex;
+  	  flex-direction: column;
+  	  align-items: center;
+  	  justify-content: flex-start;
+  	  padding: 28px 0 0 0;
+  	}
+  	h1 {
+  	  margin: 0 0 20px 0;
+  	  font-size: 2.1rem;
+  	  letter-spacing: 2.5px;
+  	  text-shadow: 0 0 12px #43e97b99, 0 2px 8px #f00a;
+  	  font-weight: 900;
+  	  text-align: center;
+  	  user-select: none;
+  	}
+  	#dateDisplay {
+  	  font-size: 1.6rem;
+  	  background: #222;
+  	  color: #43e97b;
+  	  border: 2.5px solid #ff3333;
+  	  border-radius: 18px;
+  	  box-shadow: 0 0 20px #ff333355, 0 0 2px #fff;
+  	  padding: 20px 34px;
+  	  margin: 18px 0 24px 0;
+  	  text-align: center;
+  	  font-weight: 700;
+  	  letter-spacing: 2px;
+  	  user-select: none;
+  	  transition: background 0.25s;
+  	}
+  	.btn-container {
+  	  display: flex;
+  	  gap: 1rem;
+  	  margin-bottom: 20px;
+  	  justify-content: center;
+  	}
+  	.btn-container button {
+  	  background: #ff3333;
+  	  color: #fff;
+  	  border: 2px solid #222;
+  	  padding: 0.7rem 2.3rem;
+  	  border-radius: 15px;
+  	  font-size: 1.3rem;
+  	  letter-spacing: 1.2px;
+  	  font-family: inherit;
+  	  cursor: pointer;
+  	  box-shadow: 0 3px 12px #0007;
+  	  transition: background 0.2s, transform 0.09s;
+  	  font-weight: bold;
+  	  outline: none;
+  	}
+  	.btn-container button:hover {
+  	  background: #ff6666;
+  	  transform: scale(1.06);
+  	}
+  	.sidebar-nav {
+  	  position: fixed;
+  	  top: 70px;
+  	  left: 20px;
+  	  z-index: 150;
+  	  display: flex;
+  	  flex-direction: column;
+  	  gap: 18px;
+  	  background: rgba(17,17,17,0.85);
+  	  border-radius: 18px;
+  	  padding: 18px 10px;
+  	  box-shadow: 0 5px 24px #000b, 0 0 2px #43e97b66;
+  	  align-items: center;
+  	  transition: left .18s;
+  	}
+  	.sidebar-nav button {
+  	  background: #ff3333;
+  	  color: #fff;
+  	  border: 2px solid #222;
+  	  padding: 0.6rem 1.6rem;
+  	  border-radius: 14px;
+  	  font-size: 0.95rem;
+  	  letter-spacing: 1.1px;
+  	  font-family: inherit;
+  	  cursor: pointer;
+  	  box-shadow: 0 3px 10px #0008;
+  	  transition: background 0.17s, transform 0.13s;
+  	  font-weight: bold;
+  	  outline: none;
+  	  width: 130px;
+  	  margin: 0;
+  	  text-align: center;
+  	  display: flex;
+  	  align-items: center;
+  	  justify-content: center;
+  	  gap: 0.4em;
+  	}
+  	.sidebar-nav button:hover {
+  	  background: #ff6666;
+  	  transform: scale(1.07);
+  	}
+  	.sidebar-nav .sidebar-label {
+  	  font-size: 1.07em;
+  	  color: #43e97b;
+  	  margin-bottom: 3px;
+  	  text-shadow: 0 2px 8px #000a;
+  	  font-weight: 800;
+  	  letter-spacing: 1.2px;
+  	  pointer-events: none;
+  	}
+  	.sidebar-toggle {
+  	  display: none;
+  	  position: fixed;
+  	  bottom: 70px;
+  	  left: 10px;
+  	  z-index: 999;
+  	  font-size: 1.6rem;
+  	  padding: 6px 12px;
+  	  background: #ff3333;
+  	  border: none;
+  	  border-radius: 10px;
+  	  color: white;
+  	  font-weight: bold;
+  	  box-shadow: 0 0 10px #000a;
+  	  cursor: pointer;
+  	}
+  	@media (max-width: 600px) {
+  	  .sidebar-toggle { display: block; }
+  	  .sidebar-nav.collapsed {
+  	    transform: translateY(100%);
+  	    opacity: 0;
+  	    pointer-events: none;
+  	  }
+  	  .sidebar-nav {
+  	    transition: transform .3s ease, opacity .3s ease;
+  	  }
+  	  .sidebar-nav {
+  	    transform: translateY(100%);
+  	    opacity: 0;
+  	    pointer-events: none;
+  	  }
+  	  .sidebar-nav:not(.collapsed) {
+  	    transform: translateY(0);
+  	    opacity: 1;
+  	    pointer-events: auto;
+  	  }
+  	}
+  	@media (max-width: 800px) {
+  	  .sidebar-nav { left: 3px; padding: 9px 4px; }
+  	  .sidebar-nav button { width: 98px; font-size: 1em; padding: 0.48rem 0.6rem; }
+  	}
+  	@media (max-width: 600px) {
+  	  .sidebar-nav {
+  	    flex-direction: row;
+  	    bottom: 0;
+  	    left: 0;
+  	    top: unset;
+  	    width: 100vw;
+  	    justify-content: center;
+  	    background: rgba(17,17,17,0.92);
+  	    border-radius: 0;
+  	    box-shadow: 0 -3px 18px #000b, 0 0 2px #43e97b66;
+  	    padding: 8px 0 10px 0;
+  	  }
+  	  .sidebar-nav .sidebar-label { display: none; }
+  	  .sidebar-nav button {
+  	    width: 33vw;
+  	    min-width: 90px;
+  	    max-width: 160px;
+  	    font-size: 1.07em;
+  	  }
+  	}
+
+  	/* --- FUN FACT FLOATING NOTIFICATION --- */
+  	.funfact-float {
+  	  position: fixed;
+  	  top: 70px;
+  	  left: calc(20px + 160px + 22px);
+  	  min-width: 260px;
+  	  max-width: 370px;
+  	  z-index: 160;
+  	  background: rgba(30,44,40,0.97);
+  	  border: 2.5px solid #43e97b;
+  	  border-radius: 18px;
+  	  box-shadow: 0 2px 30px #43e97b44, 0 0 8px #fff2;
+  	  color: #baffd1;
+  	  text-shadow: 0 1px 8px #222a, 0 0 2px #fff, 0 0 3px #43e97b;
+  	  font-size: 1.08em;
+  	  padding: 18px 20px 16px 20px;
+  	  display: flex;
+  	  flex-direction: column;
+  	  align-items: flex-start;
+  	  justify-content: flex-start;
+  	  min-height: 2.6em;
+  	  transition: left .22s, top .22s, box-shadow .24s, transform 0.3s, opacity 0.3s, max-height 0.3s, padding 0.3s;
+  	  pointer-events: none;
+  	  word-break: break-word;
+  	  overflow-wrap: break-word;
+  	  box-sizing: border-box;
+  	  user-select: text;
+  	  animation: funfact-pop 0.36s cubic-bezier(.3,2,.23,.92);
+  	  width: auto;
+  	  max-height: 600px;
+  	  opacity: 1;
+  	}
+  	.funfact-float.funfact-collapsed {
+  	  opacity: 0.6;
+  	  pointer-events: auto !important;
+  	  max-height: 0;
+  	  padding-top: 0;
+  	  padding-bottom: 0;
+  	  overflow: hidden;
+  	  transform: translateY(25px) scale(0.96);
+  	  min-height: 0;
+  	  border-top-left-radius: 0;
+  	  border-top-right-radius: 0;
+  	  transition: max-height 0.3s, opacity 0.3s, padding 0.3s, transform 0.3s;
+  	}
+  	@keyframes funfact-pop {
+  	  0% {transform: translateY(-25px) scale(0.95); opacity: 0;}
+  	  70% {transform: translateY(3px) scale(1.04); opacity: 1;}
+  	  100% {transform: translateY(0) scale(1);}
+  	}
+  	.funfact-float::before {
+  	  content: "💡";
+  	  font-size: 1.18em;
+  	  margin-right: 0.7em;
+  	  filter: drop-shadow(0 0 8px #43e97b88);
+  	  flex-shrink: 0;
+  	  opacity: 0.9;
+  	  margin-top: 0.2em;
+  	  margin-bottom: 0.4em;
+  	}
+  	.funfact-year {
+  	  color: #fff;
+  	  font-weight: 700;
+  	  font-size: 1.18em;
+  	  letter-spacing: 1.1px;
+  	  margin-bottom: 0.25em;
+  	  text-shadow: 0 2px 6px #43e97b88, 0 0 2px #fff;
+  	  line-height: 1.1;
+  	  margin-left: 0.1em;
+  	}
+  	.funfact-desc {
+  	  color: #baffd1;
+  	  font-size: 1.04em;
+  	  text-shadow: 0 1px 8px #222a, 0 0 2px #fff, 0 0 3px #43e97b;
+  	  line-height: 1.35;
+  	  word-break: break-word;
+  	  overflow-wrap: break-word;
+  	}
+  	@media (max-width: 940px) {
+  	  .funfact-float {
+  	    left: unset;
+  	    right: 0;
+  	    top: 85px;
+  	    min-width: 180px;
+  	    max-width: 97vw;
+  	    width: 97vw;
+  	    padding: 13px 2vw 13px 2vw;
+  	    font-size: 1em;
+  	  }
+  	}
+  	@media (max-width: 600px) {
+  	  .funfact-float {
+  	    position: fixed;
+  	    top: unset;
+  	    left: 0;
+  	    right: 0;
+  	    bottom: 0px;
+  	    min-width: 0;
+  	    max-width: 100vw;
+  	    width: 100vw;
+  	    border-radius: 0;
+  	    border-bottom: none !important;
+  	    padding: 12px 5vw 12px 7vw;
+  	    box-shadow: 0 -1px 22px #43e97b44, 0 0 8px #fff2;
+  	    font-size: 0.99em;
+  	    overflow-wrap: break-word;
+  	    word-break: break-word;
+  	    box-sizing: border-box;
+  	    pointer-events: auto;
+  	    transition: max-height 0.3s, opacity 0.3s, padding 0.3s, transform 0.3s;
+  	    z-index: 300;
+  	  }
+  	  .funfact-float.funfact-collapsed {
+  	    max-height: 0 !important;
+  	    opacity: 0.3 !important;
+  	    pointer-events: auto;
+  	    padding-top: 0 !important;
+  	    padding-bottom: 0 !important;
+  	    min-height: 0 !important;
+  	    border-radius: 0 0 0 0 !important;
+  	    border-top: none !important;
+  	    transform: translateY(25px) scale(0.96);
+  	  }
+  	}
+  	/* -- Fun Fact Toggle Button -- */
+  	.funfact-toggle-btn {
+  	  display: none;
+  	  position: fixed;
+  	  right: 16px;
+  	  bottom: 74px;
+  	  z-index: 401;
+  	  background: #282;
+  	  color: #fff;
+  	  border: none;
+  	  border-radius: 50%;
+  	  width: 48px;
+  	  height: 48px;
+  	  font-size: 1.7em;
+  	  font-family: inherit;
+  	  font-weight: bold;
+  	  box-shadow: 0 0 7px #43e97b88, 0 2px 9px #000c;
+  	  cursor: pointer;
+  	  transition: background 0.15s, color 0.15s, box-shadow 0.2s, opacity 0.25s;
+  	  user-select: none;
+  	  outline: none;
+  	  display: flex;
+  	  align-items: center;
+  	  justify-content: center;
+  	  opacity: 0.9;
+  	}
+  	.funfact-toggle-btn:active {
+  	  background: #16bb67;
+  	  color: #fff;
+  	  opacity: 1;
+  	}
+  	@media (max-width: 600px) {
+  	  .funfact-toggle-btn { display: flex; }
+  	}
+
+  	#dayButtons {
+  	  display: flex;
+  	  flex-wrap: wrap;
+  	  justify-content: center;
+  	  gap: 1.2em;
+  	  max-width: 500px;
+  	  margin: 0 auto 0 auto;
+  	}
+  	#dayButtons button {
+  	  position: relative;
+  	  background: radial-gradient(circle at 60% 40%, #43e97b 70%, #3bc36b 100%);
+  	  border: 4px solid #ff3333;
+  	  color: #222;
+  	  border-radius: 20%;
+  	  width: 120px;
+  	  height: 92px;
+  	  font-size: 1rem;
+  	  font-family: inherit;
+  	  font-weight: 800;
+  	  letter-spacing: 1.2px;
+  	  margin: 13px 7px;
+  	  cursor: pointer;
+  	  box-shadow: 0 4px 16px #0009, 0 0 1px #fff;
+  	  outline: none;
+  	  transition: background 0.14s, box-shadow 0.16s, transform 0.13s;
+  	  z-index: 3;
+  	  overflow: hidden;
+  	  display: flex;
+  	  align-items: center;
+  	  justify-content: center;
+  	  user-select: none;
+  	}
+  	#dayButtons button .fragments, #dayButtons button .emoji-burst {
+  	  pointer-events: none;
+  	  position: absolute;
+  	  left: 0; top: 0;
+  	  width: 100%; height: 100%;
+  	  z-index: 11;
+  	  display: block;
+  	  overflow: visible;
+  	}
+  	.fragment {
+  	  position: absolute;
+  	  bottom: 45%;
+  	  left: 50%;
+  	  width: 22px;
+  	  height: 22px;
+  	  border-radius: 7px;
+  	  background: linear-gradient(135deg, #ff3333 60%, #222 100%);
+  	  opacity: 0.96;
+  	  pointer-events: none;
+  	  z-index: 12;
+  	  transform: translate(-50%,0) scale(1.45) rotate(0deg);
+  	  animation: fragment-fall 1.2s cubic-bezier(.61,1.7,.43,.99) forwards;
+  	  box-shadow: 0 0 12px #fff8, 0 0 3px #43e97b88;
+  	}
+  	.fragment.green {
+  	  background: linear-gradient(135deg, #43e97b 55%, #3bc36b 100%);
+  	  box-shadow: 0 0 15px #43e97bb7, 0 0 1px #fff;
+  	  opacity: 0.98;
+  	}
+  	@keyframes fragment-fall {
+  	  0% {
+  	    opacity: 1;
+  	    transform: translate(-50%, 0) scale(1.45) rotate(0deg);
+  	  }
+  	  70% {
+  	    opacity: 1;
+  	  }
+  	  85% {
+  	    opacity: 0.9;
+  	  }
+  	  100% {
+  	    opacity: 0;
+  	    transform:
+  	      translate(
+  	        calc(-50% + var(--frag-x, 0px)),
+  	        calc(250px + var(--frag-y, 0px))
+  	      )
+  	      scale(0.85)
+  	      rotate(var(--frag-rot, 20deg));
+  	  }
+  	}
+  	.emoji-burst-emoji {
+  	  position: absolute;
+  	  left: 50%;
+  	  top: 50%;
+  	  font-size: 2.2em;
+  	  pointer-events: none;
+  	  opacity: 0.95;
+  	  animation: emoji-burst-pop 1.1s cubic-bezier(.6,1.6,.4,1) forwards;
+  	  will-change: transform, opacity;
+  	  filter: drop-shadow(0 1px 8px #fff8);
+  	  user-select: none;
+  	}
+  	@keyframes emoji-burst-pop {
+  	  0% {
+  	    opacity: 1;
+  	    transform: translate(-50%, -50%) scale(0.7) rotate(0deg);
+  	  }
+  	  70% {
+  	    opacity: 1;
+  	    transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(1.18) rotate(var(--burst-rot, 0deg));
+  	  }
+  	  100% {
+  	    opacity: 0;
+  	    transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(0.95) rotate(var(--burst-rot, 0deg));
+  	  }
+  	}
+  	#dayButtons button:hover {
+  	  background: #80ffb4;
+  	  transform: scale(1.10);
+  	  box-shadow: 0 6px 22px #43e97baa, 0 0 4px #fff;
+  	}
+  	#dayButtons button.clicked {
+  	  background: #f00;
+  	  color: #fff;
+  	  animation: recoil 0.18s cubic-bezier(.78,-0.07,0,1.43);
+  	}
+  	@keyframes recoil {
+  	  0% {transform: scale(1);}
+  	  40% {transform: scale(0.95);}
+  	  100% {transform: scale(1);}
+  	}
+  	#dayButtons button.correct {
+  	  background: linear-gradient(145deg,#43e97b 70%, #3bc36b 120%);
+  	  color: #fff;
+  	  border: 4px solid #ffda00;
+  	  box-shadow: 0 0 15px #43e97baa, 0 0 4px #fff;
+  	  animation: wrongshake 0.19s;
+  	}
+  	#dayButtons button.wrong {
+  	  background: #f00 !important;
+  	  border: 4px solid #900;
+  	  color: #fff;
+  	  animation: wrongshake 0.19s;
+  	}
+  	@keyframes wrongshake {
+  	  0%,100%{transform:translate(0,0);}
+  	  30%{transform:translate(-8px,2px);}
+  	  60%{transform:translate(6px,-4px);}
+  	}
+  	#strikeDisplay {
+  	  display: flex;
+  	  flex-direction: column;
+  	  align-items: center;
+  	  background: rgba(44,0,0,0.94);
+  	  color: #fff;
+  	  font-size: 2.2rem;
+  	  font-weight: bold;
+  	  padding: 28px 38px;
+  	  border-radius: 24px;
+  	  box-shadow: 0 4px 40px #f003, 0 0 5px #fff;
+  	  margin-top: 34px;
+  	  text-shadow: 0 0 10px #f00a, 0 0 3px #fff;
+  	  border: 3px solid #ff3333;
+  	  z-index: 4;
+  	  position: relative;
+  	  transition: opacity .25s;
+  	}
+  	#strikeDisplay.hidden { display: none; }
+
+  	.shake { animation: screenShake 0.23s 1; }
+  	.shake2 { animation: screenShake 0.5s 1; }
+  	@keyframes screenShake {
+  	  0%, 100% { transform: translate(0, 0);}
+  	  20% { transform: translate(-10px, 3px) rotate(-2.5deg);}
+  	  40% { transform: translate(7px, -8px) rotate(3deg);}
+  	  60% { transform: translate(-5px, 2px) rotate(-2deg);}
+  	  80% { transform: translate(5px, 0px) rotate(1.5deg);}
+  	}
+  	@media (max-width: 600px) {
+  	  .main-container {padding: 10px 0;}
+  	  h1 {font-size: 1.1rem;}
+  	  #dateDisplay {font-size: 1.1rem; padding: 12px 8px;}
+  	  #strikeDisplay {font-size: 1.1rem; padding: 13px 10px;}
+  	  .btn-container button {
+  	    padding: 0.8rem 2.4rem;
+  	    font-size: 1.1rem;
+  	  }
+  	  #dayButtons button {
+  	    font-size: 1rem;
+  	    width: 140px;
+  	    height: 50px;
+  	  }
+  	  .hud .doomguy {font-size: 1.1rem;}
+  	}
+  	.voice-ui{
+  	  margin: 8px 0 0 0;
+  	  background: #171a17;
+  	  border: 2px solid #43e97b;
+  	  border-radius: 14px;
+  	  padding: 10px 14px;
+  	  width: min(480px, 92vw);
+  	  box-shadow: 0 4px 16px #0008, 0 0 2px #fff2;
+  	}
+  	#voiceStatus{
+  	  color:#baffd1;
+  	  font-weight:700;
+  	  letter-spacing: .5px;
+  	  text-shadow: 0 1px 6px #000a, 0 0 2px #43e97b;
+  	}
+  	#voiceRoundTimer{
+  	  margin-top: 6px;
+  	  font-weight: 800;
+  	  color: #ffda00;
+  	  text-shadow: 0 0 6px #000, 0 0 2px #fff;
+  	}
+
+  	.floating-burst {
+  	  pointer-events: none !important;
+  	  width: 0 !important;
+  	  height: 0 !important;
+  	}
+
+  </style>
+</head>
+<body>
+  <!-- Matrix background canvas -->
+  <canvas id="matrix-bg"></canvas>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar-nav collapsed" aria-label="Quick external links">
+    <span class="sidebar-label">Links</span>
+    <button onclick="window.location.href='Multiplication.html'" title="Multiplication">✖️ Multi</button>
+    <button onclick="window.location.href='Exponential.html'" title="Exponential">🔢 Expo</button>
+    <button onclick="window.location.href='https://shop.thenoeticexperience.com/'" title="Book">📖 Book</button>
+    <button onclick="window.location.href='Division.html'" title="Div">➗ Div</button>
+    <button onclick="window.location.href='Donation.html'" class="active" title="Donate">🪙 Donate</button>
+  </nav>
+
+  <!-- Fun Fact Toggle (mobile only) -->
+  <button id="funFactToggleBtn" class="funfact-toggle-btn" tabindex="0" aria-label="Show or hide fun fact" onclick="toggleFunFact()" title="Show/Hide Fun Fact">
+    💡
+  </button>
+  <!-- Floating Fun Fact -->
+  <div id="funFact" class="funfact-float"></div>
+
+  <div class="hud">
+    <span class="doomguy" id="doomguy-face">😀</span>
+    <span id="streakDisplay" class="streak">🔥 0</span>
+    <span class="timer" id="timerDisplay">⏱️ 1:00</span>
+    <button class="pause-btn" id="hudPauseBtn" onclick="togglePause()" aria-label="Pause or resume timer">⏸</button>
+    <button class="music-btn" id="musicPauseBtn" onclick="toggleMusic()" aria-label="Pause or play music">🎵⏸</button>
+    <select id="musicSelect" class="century-select" aria-label="Choose background music">
+    	<option value="doom">DOOM</option>
+    	<option value="lofi">Beethoven</option>
+    	<option value="cyberpunk">Nitro</option>
+    	<option value="relax">Relax</option>
+    	<option value="think">Think</option>
+    </select>
+    <select id="centurySelect" class="century-select" aria-label="Choose century">
+      <option value="1600">1600s</option>
+      <option value="1700">1700s</option>
+      <option value="1800">1800s</option>
+      <option value="1900" selected>1900s</option>
+      <option value="2000">2000s</option>
+      <option value="2100">2100s</option>
+      <option value="2200">2200s</option>
+      <option value="2300">2300s</option>
+      <option value="2400">2400s</option>
+      <option value="2500">2500s</option>
+      <option value="2600">2600s</option>
+      <option value="2700">2700s</option>
+      <option value="2800">2800s</option>
+      <option value="2900">2900s</option>
+      <option value="3000">3000s</option>
+      <option value="3100">3100s</option>
+      <option value="3200">3200s</option>
+      <option value="3300">3300s</option>
+      <option value="3400">3400s</option>
+      <option value="3500">3500s</option>
+      <option value="3600">3600s</option>
+      <option value="3700">3700s</option>
+      <option value="3800">3800s</option>
+      <option value="3900">3900s</option>
+      <option value="4000">4000s</option>
+      <option value="4100">4100s</option>
+      <option value="4200">4200s</option>
+      <option value="4300">4300s</option>
+      <option value="4400">4400s</option>
+      <option value="4500">4500s</option>
+      <option value="4600">4600s</option>
+      <option value="4700">4700s</option>
+      <option value="4800">4800s</option>
+      <option value="4900">4900s</option>
+      <option value="5000">5000s</option>
+    </select>
+  </div>
+
+  <div class="main-container">
+    <h1>📅 𝕮𝖆𝖑² Calendar Trainer</h1>
+    <div id="dateDisplay">Click New Date to start</div>
+    <div class="btn-container">
+
+      <button onclick="startGame()">New Date</button>
+      <button id="historicModeBtn" onclick="toggleHistoricMode()" style="background:#43e97b;color:#222;">Historic Mode: OFF</button>
+    </div>
+    <!-- Voice Mode row (goes below the New Date / Historic Mode row) -->
+    <div class="btn-container">
+
+      <button id="voiceModeBtn" onclick="startVoiceRound()" title="Speak & Answer by Voice">🎙️ Voice Mode</button>
+    </div>
+    <div id="voicePickerContainer" style="margin:10px 0 0 0; display:none;">
+      <label for="voiceSelect" style="color:#baffd1;">🗣️ Voice:</label>
+      <select id="voiceSelect" style="margin-left:4px; padding:2px 8px; border-radius:6px;"></select>
+    </div>
+
+    <!-- Minimal voice UI status -->
+    <div id="voiceUI" class="voice-ui" aria-live="polite" style="display:none;">
+      <div id="voiceStatus">🎧 Voice idle. Click “Voice Mode” to start.</div>
+      <div id="voiceRoundTimer">⏱️ Reaction: 0.0 s</div>
+    </div>
+
+    <div id="voicePickerContainer" style="margin:10px 0 0 0; display:none;">
+      <label for="voiceSelect" style="color:#baffd1;">🗣️ Voice:</label>
+      <select id="voiceSelect" style="margin-left:4px; padding:2px 8px; border-radius:6px;"></select>
+    </div>
+
+    <div id="dayButtons" class="day-options"></div>
+    <div id="strikeDisplay" class="hidden">❌<br>Game Over</div>
+  </div>
+
+  <img id="doomGun" class="doom-gun" src="assets/gun.png" alt="Doom Gun" />
+
+  <!-- Audio Elements -->
+  <audio id="gunshotSound" src="https://www.myinstants.com/media/sounds/m4a1_single-kibblesbob-8540445_VMWH3fM.mp3"></audio>
+  <audio id="doomMusic" src="https://www.myinstants.com/media/sounds/doom-ost-e1m1-at-dooms-gatedodoc.mp3" loop></audio>
+  <audio id="lofiMusic" src="assets/bet1.mp3" loop></audio>
+  <audio id="cyberpunkMusic" src="assets/nitro.mp3" loop></audio>
+  <audio id="relaxMusic" src="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3" loop></audio>
+  <audio id="thinkMusic" src="https://www.bensound.com/bensound-music/bensound-scifi.mp3" loop></audio>
+  <audio id="correctSound" src="https://www.myinstants.com/media/sounds/correct-pinpon.mp3"></audio>
+  <audio id="wrongSound" src="https://www.myinstants.com/media/sounds/answer-wrong.mp3"></audio>
+
+  <script>
+
+    // === REST OF YOUR ORIGINAL SCRIPT BELOW ===
+    // === GLOBAL GAME STATE ===
+    let timerInterval;
+    let currentDate;
+    let streakCount = 0;
+    let isGameOver = false;
+    let isPaused = false;
+    let timeRemaining = 30;
+    let lastCorrect = true;
+
+    // --- HISTORIC MODE ---
+    let historicMode = false;
+    let availableHistoricDates = [];
+
+    // --- MUSIC STATE ---
+    const musicTracks = {
+      doom: document.getElementById('doomMusic'),
+      lofi: document.getElementById('lofiMusic'),
+      cyberpunk: document.getElementById('cyberpunkMusic'),
+      relax: document.getElementById('relaxMusic'),
+      think: document.getElementById('thinkMusic'),
+    };
+    let currentMusic = 'doom';
+
+    // --- DOM SHORTCUTS ---
+    const musicPauseBtn = document.getElementById('musicPauseBtn');
+    const musicSelect = document.getElementById('musicSelect');
+
+    // --- UTIL: Fetch Wikipedia Image for Event ---
+    async function fetchWikipediaImage(wikipediaLinks) {
+      if (!wikipediaLinks || !wikipediaLinks.length) return null;
+      // Try the first Wikipedia page name
+      const pageTitle = wikipediaLinks[0].title || wikipediaLinks[0].wikipedia.split('/').slice(-1)[0];
+      const url = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&pithumbsize=600&titles=${encodeURIComponent(pageTitle)}&origin=*`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const pages = data.query.pages;
+        for (const pageId in pages) {
+          if (pages[pageId].thumbnail && pages[pageId].thumbnail.source) {
+            return pages[pageId].thumbnail.source;
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    // --- Add this function for the correct overlay ---
+    function showCorrectOverlay() {
+      let overlay = document.createElement('div');
+      overlay.textContent = '✅ Correct!';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '50%';
+      overlay.style.left = '50%';
+      overlay.style.transform = 'translate(-50%,-50%) scale(1)';
+      overlay.style.background = 'rgba(40,210,90,0.97)';
+      overlay.style.color = '#fff';
+      overlay.style.fontSize = '2.3em';
+      overlay.style.fontWeight = 'bold';
+      overlay.style.padding = '30px 44px';
+      overlay.style.borderRadius = '22px';
+      overlay.style.boxShadow = '0 0 30px #43e97baa, 0 0 8px #fff';
+      overlay.style.zIndex = 9999;
+      overlay.style.textAlign = 'center';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.opacity = 1;
+      overlay.style.transition = 'opacity 0.7s';
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.style.opacity = 0, 500);
+      setTimeout(() => { if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 1300);
+    }
+
+    function showWrongOverlay() {
+      let overlay = document.createElement('div');
+      overlay.textContent = '❌ Incorrect!';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '50%';
+      overlay.style.left = '50%';
+      overlay.style.transform = 'translate(-50%,-50%) scale(1)';
+      overlay.style.background = 'rgba(230,0,0,0.92)';
+      overlay.style.color = '#fff';
+      overlay.style.fontSize = '2.3em';
+      overlay.style.fontWeight = 'bold';
+      overlay.style.padding = '30px 44px';
+      overlay.style.borderRadius = '22px';
+      overlay.style.boxShadow = '0 0 30px #c00a, 0 0 8px #fff';
+      overlay.style.zIndex = 9999;
+      overlay.style.textAlign = 'center';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.opacity = 1;
+      overlay.style.transition = 'opacity 0.7s';
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.style.opacity = 0, 500);
+      setTimeout(() => { if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 1300);
+    }
+
+    // --- NEW: EMOJI BURST OUTSIDE THE BUTTON ---
+    function spawnEmojiBurstAtButton(button) {
+      // Get button position in viewport
+      const rect = button.getBoundingClientRect();
+      // Coordinates to center of button
+      const centerX = rect.left + rect.width / 2 + window.scrollX;
+      const centerY = rect.top + rect.height / 2 + window.scrollY;
+
+      // Create burst container
+      const burst = document.createElement('span');
+      burst.className = 'emoji-burst floating-burst';
+      burst.style.position = 'absolute';
+      burst.style.left = (centerX) + 'px';
+      burst.style.top = (centerY) + 'px';
+      burst.style.pointerEvents = 'none';
+      burst.style.zIndex = 1000;
+      burst.style.width = 0;
+      burst.style.height = 0;
+
+      // Fun mix of emojis
+      const emojis = ['🎉','🌟','✨','🥳','🎊','🦄','😄','💫','🎈','🤩','🚀','🍀'];
+      const count = 13 + Math.floor(Math.random() * 6);
+      for (let i = 0; i < count; i++) {
+        const e = document.createElement('span');
+        e.className = 'emoji-burst-emoji';
+        e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = 60 + Math.random() * 55;
+        const x = Math.cos(angle) * radius + (Math.random()-0.5)*30;
+        const y = Math.sin(angle) * radius * 0.8 + (Math.random()-0.5)*15;
+        const rot = -60 + Math.random()*120;
+        e.style.setProperty('--burst-x', `${x.toFixed(1)}px`);
+        e.style.setProperty('--burst-y', `${y.toFixed(1)}px`);
+        e.style.setProperty('--burst-rot', `${rot.toFixed(1)}deg`);
+        burst.appendChild(e);
+      }
+      document.body.appendChild(burst);
+
+      setTimeout(() => {
+        if (burst && burst.parentNode) burst.parentNode.removeChild(burst);
+      }, 1600);
+    }
+
+    // --- KID-FRIENDLY CORRECT/WRONG SOUNDS ---
+    function playCorrectSound() {
+      const s = document.getElementById('correctSound');
+      if (s) { s.currentTime = 0; s.play(); }
+    }
+    function playWrongSound() {
+      const s = document.getElementById('wrongSound');
+      if (s) { s.currentTime = 0; s.play(); }
+    }
+
+
+    // --- MUSIC CONTROL ---
+    function playMusic(track) {
+      Object.values(musicTracks).forEach(m => {
+        m.pause();
+        m.currentTime = 0;
+      });
+      musicTracks[track].play();
+      musicPauseBtn.innerHTML = '🎵⏸';
+      musicPauseBtn.setAttribute('aria-label', 'Pause music');
+    }
+    function pauseMusic(track) {
+      musicTracks[track].pause();
+      musicPauseBtn.innerHTML = '🎵▶️';
+      musicPauseBtn.setAttribute('aria-label', 'Play music');
+    }
+    function isMusicPaused(track) {
+      return musicTracks[track].paused;
+    }
+    function toggleMusic() {
+      if (isMusicPaused(currentMusic)) {
+        musicTracks[currentMusic].play();
+        musicPauseBtn.innerHTML = '🎵⏸';
+        musicPauseBtn.setAttribute('aria-label', 'Pause music');
+      } else {
+        musicTracks[currentMusic].pause();
+        musicPauseBtn.innerHTML = '🎵▶️';
+        musicPauseBtn.setAttribute('aria-label', 'Play music');
+      }
+    }
+    musicSelect.addEventListener('change', function () {
+      currentMusic = this.value;
+      playMusic(currentMusic);
+    });
+
+    // On load, pause all music
+    document.addEventListener('DOMContentLoaded', function() {
+      Object.values(musicTracks).forEach(m => { m.pause(); m.currentTime = 0; });
+      musicPauseBtn.innerHTML = '🎵▶️';
+      musicPauseBtn.setAttribute('aria-label', 'Play music');
+      if(window.innerWidth <= 600) {
+        document.querySelector('.sidebar-nav').classList.add('collapsed');
+      } else {
+        document.querySelector('.sidebar-nav').classList.remove('collapsed');
+      }
+      updateFunFactToggleBtn();
+      updateFunFactVisibility();
+    });
+    window.addEventListener('beforeunload', () => {
+      Object.values(musicTracks).forEach(m => m.pause());
+    });
+
+    // ================= GAME LOGIC ====================
+    const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const doomGuyFaces = ["😀", "😐", "😬", "😵"];
+    function updateDoomguyFace() {
+      let idx = 0;
+      if (isGameOver) idx = 3;
+      else if (timeRemaining < 12) idx = 2;
+      else if (timeRemaining < 30) idx = 1;
+      else idx = 0;
+      document.getElementById('doomguy-face').textContent = doomGuyFaces[idx];
+    }
+
+    function startGame() {
+      streakCount = 0;
+      isGameOver = false;
+      timeRemaining = 30;
+      document.getElementById('strikeDisplay').classList.add('hidden');
+      document.getElementById('streakDisplay').textContent = `🔥 ${streakCount}`;
+      document.getElementById('dateDisplay').style.background = "#222";
+      lastCorrect = true;
+      updateDoomguyFace();
+
+      generateDate().then(({ date, funFactText, funFactImage }) => {
+        if (!date) {
+          document.getElementById('dateDisplay').textContent = "No valid date found!";
+          document.getElementById('funFact').innerHTML = "";
+          renderDayButtons();
+          return;
+        }
+        currentDate = date;
+
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
+
+        // Show fun fact only in historic mode, now with image!
+        if (historicMode && funFactText) {
+          let html = '';
+          if (funFactImage) {
+            html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
+              <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
+            </div>`;
+          }
+          html += `<div class="funfact-desc">${funFactText}</div>`;
+          document.getElementById('funFact').innerHTML = html;
+        } else {
+          document.getElementById('funFact').innerHTML = '';
+        }
+
+        renderDayButtons();
+        startTimer();
+        updateDoomguyFace();
+      });
+    }
+
+    function toggleHistoricMode() {
+      historicMode = !historicMode;
+      document.getElementById('historicModeBtn').textContent = `Historic Mode: ${historicMode ? "ON" : "OFF"}`;
+      document.getElementById('historicModeBtn').style.background = historicMode ? "#ffe066" : "#43e97b";
+      document.getElementById('historicModeBtn').style.color = "#222";
+      updateFunFactVisibility();
+      startGame();
+    }
+
+    function isMorbidOrWarFact(desc) {
+      if(!desc) return false;
+      desc = desc.toLowerCase();
+      const morbidWords = [
+        'died', 'death', 'killed', 'executed', 'assassinated', 'massacre', 'murder',
+        'suicide', 'hanged', 'shot', 'bomb', 'attack', 'explosion', 'disaster', 'tragedy',
+        'dead', 'casualties', 'genocide', 'executed', 'collapse', 'burned', 'crash' , 'kills' , 'jewish'
+      ];
+      const warWords = [
+        'war', 'battle', 'siege', 'invasion', 'revolution', 'conflict', 'fought', 'army',
+        'navy', 'military', 'soldier', 'forces', 'troops', 'hostilities', 'uprising',
+        'rebellion', 'retreat', 'surrender', 'allied', 'nazi', 'world war', 'civil war'
+      ];
+      return morbidWords.some(w => desc.includes(w)) || warWords.some(w => desc.includes(w));
+    }
+
+
+
+
+
+    function loadHistoricDatesAndStart() {
+      availableHistoricDates = [];
+      const century = parseInt(document.getElementById('centurySelect').value);
+      const years = Array.from({length: 100}, (_, i) => century + i);
+      let loaded = 0;
+      let datesToFetch = [];
+      for(let m = 1; m <= 12; m++) {
+        let daysInMonth = new Date(2000, m, 0).getDate();
+        for(let d = 1; d <= daysInMonth; d++) {
+          datesToFetch.push({month: m, day: d});
+        }
+      }
+      let processed = 0;
+      let maxToScan = 5;
+      function processNext() {
+        if(processed >= Math.min(datesToFetch.length, maxToScan)) {
+          if (availableHistoricDates.length === 0) {
+            document.getElementById('dateDisplay').textContent = "No historic dates found. Try a different century!";
+          } else {
+            startGame();
+          }
+          return;
+        }
+        let {month, day} = datesToFetch[processed++];
+        fetch(`https://byabbe.se/on-this-day/${month}/${day}/events.json`)
+          .then(resp => resp.ok ? resp.json() : Promise.reject())
+          .then(data => {
+            if(data.events) {
+              data.events.forEach(ev => {
+                let y = parseInt(ev.year);
+                if (years.includes(y) && ev.description.length > 30) {
+                  availableHistoricDates.push({
+                    year: y,
+                    month: month-1,
+                    day: day,
+                    event: ev
+                  });
+                }
+              });
+            }
+          })
+          .finally(() => {
+            if(processed % 10 === 0) {
+              document.getElementById('dateDisplay').textContent = `Scanning for historic dates... (${processed}/${maxToScan})`;
+            }
+            processNext();
+          });
+      }
+      processNext();
+    }
+
+    function generateDate() {
+      return new Promise((resolve, reject) => {
+        if (isGameOver || isPaused) return;
+        clearInterval(timerInterval);
+
+        if (historicMode) {
+          const century = parseInt(document.getElementById('centurySelect').value);
+          const years = Array.from({ length: 100 }, (_, i) => century + i);
+          let tries = 0;
+          function tryRandomDay() {
+            tries++;
+            if (tries > 15) {
+              resolve({ date: null, funFactText: null, funFactImage: null });
+              return;
+            }
+            const month = Math.floor(Math.random() * 12) + 1;
+            const daysInMonth = new Date(2000, month, 0).getDate();
+            const day = Math.floor(Math.random() * daysInMonth) + 1;
+            fetch(`https://byabbe.se/on-this-day/${month}/${day}/events.json`)
+              .then(resp => resp.ok ? resp.json() : Promise.reject())
+              .then(async data => {
+                let found = null;
+                if (data.events) {
+                  const candidates = data.events.filter(ev =>
+                    years.includes(parseInt(ev.year)) &&
+                    ev.description.length > 30 &&
+                    !isMorbidOrWarFact(ev.description)
+                  );
+                  if (candidates.length > 0) {
+                    found = candidates[Math.floor(Math.random() * candidates.length)];
+                  }
+                }
+                if (found) {
+                  const y = parseInt(found.year);
+                  const dateObj = new Date(y, month - 1, day);
+                  // --- Fetch image from Wikipedia, if possible ---
+                  let img = null;
+                  if (found.wikipedia && found.wikipedia.length) {
+                    img = await fetchWikipediaImage(found.wikipedia);
+                  }
+                  resolve({
+                    date: dateObj,
+                    funFactText: found.description.replace(/^[:\d\s\.\-–—]*(?=[A-Za-z])/, ""),
+                    funFactImage: img
+                  });
+                } else {
+                  tryRandomDay();
+                }
+              })
+              .catch(() => {
+                tryRandomDay();
+              });
+          }
+          tryRandomDay();
+          return;
+        }
+        // --- DEFAULT MODE ---
+        const century = parseInt(document.getElementById('centurySelect').value);
+        const year = Math.floor(Math.random() * 100) + century;
+        const month = Math.floor(Math.random() * 12);
+        const maxDay = new Date(year, month + 1, 0).getDate();
+        const randomDay = Math.floor(Math.random() * maxDay) + 1;
+        const dateObj = new Date(year, month, randomDay);
+        resolve({ date: dateObj, funFactText: null, funFactImage: null });
+      });
+    }
+
+    function renderDayButtons() {
+      const container = document.getElementById('dayButtons');
+      container.innerHTML = '';
+      const shuffled = daysOfWeek.slice().sort(()=>Math.random()-0.5);
+      shuffled.forEach(day => {
+        const btn = document.createElement('button');
+        btn.textContent = day;
+        btn.onclick = () => checkAnswer(day, btn);
+        const fragSpan = document.createElement('span');
+        fragSpan.className = 'fragments';
+        btn.appendChild(fragSpan);
+        // Add a container for emoji burst
+        const emojiBurst = document.createElement('span');
+        emojiBurst.className = 'emoji-burst';
+        btn.appendChild(emojiBurst);
+        container.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selectedDay, buttonElement) {
+      if (isGameOver || isPaused) return;
+      const correctDay = daysOfWeek[currentDate.getDay()];
+      const buttons = document.querySelectorAll('#dayButtons button');
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === correctDay) {
+          btn.classList.add('correct');
+        }
+      });
+
+      if (selectedDay === correctDay) {
+        streakCount++;
+        lastCorrect = true;
+        document.getElementById('streakDisplay').textContent = `🔥 ${streakCount}`;
+        document.getElementById('dateDisplay').style.background = "#222";
+        document.body.classList.remove('shake');
+        void document.body.offsetWidth;
+        document.body.classList.add('shake');
+
+        // --- REMOVE this: spawnEmojiBurstAtButton(buttonElement); ---
+        // spawnEmojiBurstAtButton(buttonElement);
+
+        // --- Instead, show the green overlay! ---
+        showCorrectOverlay();
+
+        // Play correct sound
+        playCorrectSound();
+        resetTimer();
+        if (!voiceRoundActive) {
+          setTimeout(() => {
+            generateDate().then(({ date, funFactText, funFactImage }) => {
+              if (!date) {
+                document.getElementById('dateDisplay').textContent = "No valid date found!";
+                document.getElementById('funFact').innerHTML = "";
+                renderDayButtons();
+                return;
+              }
+              currentDate = date;
+              const options = { year: 'numeric', month: 'long', day: 'numeric' };
+              document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
+              // Show fun fact only in historic mode, now with image!
+              if (historicMode && funFactText) {
+                let html = '';
+                if (funFactImage) {
+                  html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
+                    <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
+                  </div>`;
+                }
+                html += `<div class="funfact-desc">${funFactText}</div>`;
+                document.getElementById('funFact').innerHTML = html;
+              } else {
+                document.getElementById('funFact').innerHTML = '';
+              }
+              renderDayButtons();
+              startTimer();
+              updateDoomguyFace();
+            });
+          }, 800);
+        }
+      } else {
+        buttonElement.classList.add('wrong');
+        lastCorrect = false;
+        isGameOver = true;
+        clearInterval(timerInterval);
+        document.body.classList.add('shake');
+        document.getElementById('dateDisplay').style.background = "#6a0000";
+        // Play wrong sound
+        playWrongSound();
+        showWrongOverlay();
+        setTimeout(() => {
+          document.body.classList.remove('shake');
+          document.getElementById('strikeDisplay').classList.remove('hidden');
+          updateDoomguyFace();
+        }, 330);
+      }
+      buttonElement.classList.add('clicked');
+      updateDoomguyFace();
+    }
+
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      updateDoomguyFace();
+      const timerDisplay = document.getElementById('timerDisplay');
+      timerDisplay.textContent = `⏱️ ${formatTime(timeRemaining)}`;
+      timerInterval = setInterval(() => {
+        if (isPaused || isGameOver) return;
+        timeRemaining--;
+        timerDisplay.textContent = `⏱️ ${formatTime(timeRemaining)}`;
+        updateDoomguyFace();
+        if (timeRemaining === 10) {
+          try { document.getElementById('timerWarningSound').play(); } catch(e){}
+        }
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          isGameOver = true;
+          document.getElementById('strikeDisplay').classList.remove('hidden');
+          document.getElementById('dateDisplay').style.background = "#6a0000";
+          updateDoomguyFace();
+        }
+      }, 1000);
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timeRemaining = 30;
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      document.getElementById('hudPauseBtn').textContent = isPaused ? '▶️' : '⏸';
+      if (!isPaused && !isGameOver) startTimer();
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function toggleSidebar() {
+      document.querySelector('.sidebar-nav').classList.toggle('collapsed');
+    }
+
+    (function() {
+      const gun = document.getElementById('doomGun');
+      function moveGun(e) {
+        let x = e.clientX;
+        const min = gun.offsetWidth/2;
+        const max = window.innerWidth - gun.offsetWidth/2;
+        if (x < min) x = min;
+        if (x > max) x = max;
+        gun.style.left = `${x}px`;
+      }
+      window.addEventListener('mousemove', moveGun);
+      window.addEventListener('touchmove', function(e){
+        if(e.touches.length) {
+          let x = e.touches[0].clientX;
+          const min = gun.offsetWidth/2;
+          const max = window.innerWidth - gun.offsetWidth/2;
+          if (x < min) x = min;
+          if (x > max) x = max;
+          gun.style.left = `${x}px`;
+        }
+      }, {passive:true});
+    })();
+    document.getElementById('doomGun').ondragstart = ()=>false;
+
+      // --- FUN FACT FOLDING (MOBILE) ---
+      let funFactCollapsed = false;
+      function toggleFunFact(forceState = null) {
+        const funFactDiv = document.getElementById('funFact');
+        const toggleBtn = document.getElementById('funFactToggleBtn');
+        if(window.innerWidth > 600) return;
+        if(forceState !== null) {
+          funFactCollapsed = forceState;
+        } else {
+          funFactCollapsed = !funFactCollapsed;
+        }
+        if(funFactCollapsed) {
+          funFactDiv.classList.add('funfact-collapsed');
+          toggleBtn.setAttribute('aria-label', 'Show fun fact');
+        } else {
+          funFactDiv.classList.remove('funfact-collapsed');
+          toggleBtn.setAttribute('aria-label', 'Hide fun fact');
+        }
+      }
+      let funFactTouchStartY = null;
+      document.getElementById('funFact').addEventListener('touchstart', function(e){
+        if(window.innerWidth > 600) return;
+        funFactTouchStartY = e.touches[0].clientY;
+      });
+      document.getElementById('funFact').addEventListener('touchend', function(e){
+        if(window.innerWidth > 600 || funFactTouchStartY === null) return;
+        const touchEndY = e.changedTouches[0].clientY;
+        if(touchEndY - funFactTouchStartY > 60) {
+          toggleFunFact(true);
+        } else if(funFactTouchStartY - touchEndY > 60) {
+          toggleFunFact(false);
+        }
+        funFactTouchStartY = null;
+      });
+      function updateFunFactToggleBtn() {
+        const btn = document.getElementById('funFactToggleBtn');
+        if(window.innerWidth <= 600) {
+          btn.style.display = 'flex';
+          toggleFunFact(true);
+        } else {
+          btn.style.display = 'none';
+          document.getElementById('funFact').classList.remove('funfact-collapsed');
+        }
+      }
+
+      // --- FUN FACT VISIBILITY CONTROL ---
+      function updateFunFactVisibility() {
+        const funFactDiv = document.getElementById('funFact');
+        const funFactToggleBtn = document.getElementById('funFactToggleBtn');
+        if (historicMode) {
+          funFactDiv.style.display = '';
+          if (window.innerWidth <= 600) {
+            funFactToggleBtn.style.display = 'flex';
+          } else {
+            funFactToggleBtn.style.display = 'none';
+          }
+        } else {
+          funFactDiv.style.display = 'none';
+          funFactToggleBtn.style.display = 'none';
+        }
+      }
+
+      window.addEventListener('resize', () => {
+        updateFunFactToggleBtn();
+        updateFunFactVisibility();
+      });
+      document.addEventListener('DOMContentLoaded', function() {
+        updateFunFactToggleBtn();
+        updateFunFactVisibility();
+      });
+
+      // -- Update availableHistoricDates if century changes
+      document.getElementById('centurySelect').addEventListener('change', () => {
+        availableHistoricDates = [];
+        if (historicMode) loadHistoricDatesAndStart();
+      });
+
+      // === VOICE MODE (autoplay, SFX, stop button) ===
+      let voiceRoundActive = false;
+      let voiceModeShouldLoop = false; // global flag to allow graceful stop
+      let voiceTimerInterval = null;
+      let voiceTimerStart = null;
+      let recognition = null;
+      let loadedVoices = [];
+      let micGranted = false;
+      let micStream = null;
+      let reactionTimerInterval = null;   // keep your existing var name if you like
+      let reactionTimerRunning  = false;  // new guard flag
+
+
+      let audioUnlocked = false;
+
+      function unlockGunshotAudio() {
+        if (audioUnlocked) return;
+        const s = document.getElementById('gunshotSound');
+        if (!s) return;
+        try {
+          const prevVol = s.volume;
+          s.volume = 0.0;
+          s.play().then(() => {
+            s.pause();
+            s.currentTime = 0;
+            s.volume = prevVol;
+            audioUnlocked = true;
+          }).catch(()=>{ /* ignore */ });
+        } catch(_) {}
+      }
+
+      function showVoiceUI(show) {
+        const ui = document.getElementById('voiceUI');
+        ui.style.display = show ? '' : 'none';
+        if (!show) {
+          document.getElementById('voiceStatus').textContent = '';
+          document.getElementById('voiceRoundTimer').textContent = '';
+        } else {
+          // Add stop button if not present
+          if (!document.getElementById('stopVoiceBtn')) {
+            const stopBtn = document.createElement('button');
+            stopBtn.id = "stopVoiceBtn";
+            stopBtn.textContent = "🛑 Stop Voice Mode";
+            stopBtn.style = "margin-top:10px;background:#900;color:white;border-radius:9px;padding:6px 24px;font-weight:bold;box-shadow:0 0 7px #f00b;";
+            stopBtn.onclick = stopVoiceMode;
+            ui.appendChild(stopBtn);
+          }
+        }
+      }
+
+      function setVoiceStatus(msg, mode='info') {
+        const el = document.getElementById('voiceStatus');
+        if (!el) return;
+        el.textContent = msg;
+        const colors = {
+          info: '#baffd1', speaking: '#80ffb4', listening: '#ffda00',
+          hearing:'#ffda00', warn:'#ffb366', error:'#ff8080'
+        };
+        el.style.color = colors[mode] || '#baffd1';
+      }
+
+      function loadVoices() {
+        loadedVoices = window.speechSynthesis ? (window.speechSynthesis.getVoices() || []) : [];
+      }
+      if ('speechSynthesis' in window) {
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+      function pickExpressiveVoice() {
+        const preferred = [
+          /Google US English/i,
+          /Google UK English Female/i,
+          /Samantha/i,
+          /Victoria/i
+        ];
+        for (const rx of preferred) {
+          const v = loadedVoices.find(v => rx.test(v.name));
+          if (v) return v;
+        }
+        const anyEN = loadedVoices.find(v => /en(-|_)?/i.test(v.lang));
+        return anyEN || loadedVoices[0] || null;
+      }
+
+      async function ensureMicPermissionOnce() {
+        if (micGranted) return true;
+        try {
+          if (navigator.permissions && navigator.permissions.query) {
+            const status = await navigator.permissions.query({ name: 'microphone' });
+            if (status.state === 'granted') {
+              micGranted = true;
+              return true;
+            }
+          }
+        } catch(_) {}
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('No mediaDevices');
+        }
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micGranted = true;
+        return true;
+      }
+
+      function speakDateOutLoud(dateObj) {
+        return new Promise((resolve, reject) => {
+          if (!('speechSynthesis' in window)) {
+            setVoiceStatus('❌ Your browser does not support TTS.', 'error');
+            return reject(new Error('No speechSynthesis'));
+          }
+          const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+          const spoken = dateObj.toLocaleDateString('en-US', opts);
+          const hype = ["Okay, listen up.", "New challenge.", "Heads up.", "Let’s roll.", "Try this one."][Math.floor(Math.random()*5)];
+          const u = new SpeechSynthesisUtterance(`${hype} What day of the week was: ${spoken}?`);
+          const v = pickExpressiveVoice();
+          if (v) u.voice = v;
+          u.rate = 1.03;
+          u.pitch = 1.12;
+          u.onstart = () => setVoiceStatus(`🗣️ Speaking: “${spoken}” …`, 'speaking');
+          u.onerror = (e) => { setVoiceStatus('❌ TTS error.', 'error'); reject(e.error || e); };
+          let track = null;
+          try { track = currentMusic && musicTracks[currentMusic]; if (track && !track.paused) track.volume = 0.25; } catch(_){}
+          u.onend = () => {
+            try { if (track) track.volume = 1.0; } catch(_){}
+            resolve();
+          };
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
+        });
+      }
+
+      function startReactionTimer({ reset = false } = {}) {
+        // If it's already running and we didn't explicitly ask to reset, do nothing.
+        if (reactionTimerRunning && !reset) return;
+
+        // If we want a fresh start, clear any prior interval and reset the start time.
+        if (reactionTimerInterval) clearInterval(reactionTimerInterval);
+        if (reset || !reactionTimerRunning) {
+          voiceTimerStart = performance.now();
+          updateVoiceTimer(0);
+        }
+
+        reactionTimerInterval = setInterval(() => {
+          const t = (performance.now() - voiceTimerStart) / 1000;
+          updateVoiceTimer(t);
+        }, 50);
+
+        reactionTimerRunning = true;
+      }
+
+      function stopReactionTimer() {
+        if (reactionTimerInterval) {
+          clearInterval(reactionTimerInterval);
+          reactionTimerInterval = null;
+        }
+        reactionTimerRunning = false;
+      }
+
+      function updateVoiceTimer(seconds) {
+        const el = document.getElementById('voiceRoundTimer');
+        if (!el) return;
+        el.textContent = `⏱️ Reaction: ${Math.max(0, seconds).toFixed(1)} s`;
+      }
+
+      const dayAliases = {
+        'sun': 'Sunday', 'sunday':'Sunday',
+        'mon': 'Monday', 'monday':'Monday',
+        'tue': 'Tuesday', 'tues':'Tuesday', 'tuesday':'Tuesday',
+        'wed': 'Wednesday', 'weds':'Wednesday', 'wednesday':'Wednesday',
+        'thu': 'Thursday', 'thur':'Thursday', 'thurs':'Thursday', 'thursday':'Thursday',
+        'fri': 'Friday', 'friday':'Friday',
+        'sat': 'Saturday', 'saturday':'Saturday'
+      };
+      function normalizeToWeekday(text) {
+        const raw = (text || '').toLowerCase().replace(/[^a-z]/g,'');
+        if (dayAliases[raw]) return dayAliases[raw];
+        for (const k of Object.keys(dayAliases)) {
+          if (raw.startsWith(k)) return dayAliases[k];
+        }
+        return null;
+      }
+      function getDayButtonByLabel(label) {
+        const btns = [...document.querySelectorAll('#dayButtons button')];
+        return btns.find(b => (b.textContent || '').trim().toLowerCase() === label.toLowerCase()) || null;
+      }
+      function enableFreshDayButtons() {
+        renderDayButtons();
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      async function startVoiceRound(loop = true) {
+        isPaused = false;
+        isGameOver = false;
+        stopTimer();
+        timeRemaining = 30;
+        document.getElementById('timerDisplay').textContent = '⏱️ —';
+
+        if (voiceRoundActive) return;
+        voiceRoundActive = true;
+        voiceModeShouldLoop = loop;
+
+        showVoiceUI(true);
+        setVoiceStatus('🎧 Preparing voice...', 'info');
+
+        try {
+          await ensureMicPermissionOnce();
+        } catch {
+          setVoiceStatus('❌ Microphone not available or permission denied.', 'error');
+          voiceRoundActive = false;
+          voiceModeShouldLoop = false;
+          return;
+        }
+
+        // === CALL generateDate() ONCE AND USE RESULT ===
+        const { date, funFactText, funFactImage } = await generateDate();
+        if (!date) {
+          setVoiceStatus('❌ Could not find a valid historic date.', 'error');
+          voiceRoundActive = false;
+          return;
+        }
+        currentDate = date;
+
+        // Show date in UI
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
+
+        // Show fun fact (if any, with image)
+        if (historicMode && funFactText) {
+          let html = '';
+          if (funFactImage) {
+            html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
+              <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
+            </div>`;
+          }
+          html += `<div class="funfact-desc">${funFactText}</div>`;
+          document.getElementById('funFact').innerHTML = html;
+        } else {
+          document.getElementById('funFact').innerHTML = '';
+        }
+
+        renderDayButtons();
+        startTimer();
+        updateDoomguyFace();
+
+        try {
+          await speakDateOutLoud(currentDate);
+          await startListeningForWeekday(loop);
+        } catch {
+          stopReactionTimer();
+          voiceRoundActive = false;
+          voiceModeShouldLoop = false;
+        }
+      }
+
+
+      function startListeningForWeekday(loop) {
+        return new Promise((resolve, reject) => {
+          const ASR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!ASR) {
+            setVoiceStatus('❌ Speech recognition not supported in this browser. Try Chrome desktop.', 'error');
+            return reject(new Error('No SpeechRecognition'));
+          }
+          try { if (recognition) recognition.abort(); } catch(_) {}
+
+          // --- small, local tuning knobs (minimal impact) ---
+          const MIN_CHARS = 3;          // ignore super-short noises
+          const INACTIVITY_MS = 19500;   // restart if we hear nothing useful for this long
+          const MAX_RESTARTS = 3;       // try a few times before we give up
+          const FILLERS = new Set(['uh','um','hmm','er','uhh','uhm','mmm','like','the','a','an','and','or','so','okay','ok']);
+
+          let restarts = 0;
+          let inactivityTimer = null;
+
+          const resetInactivity = () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => softRestart('timeout'), INACTIVITY_MS);
+          };
+
+          const softRestart = (reason) => {
+            if (heardDay) return; // already done
+            if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+            if (restarts < MAX_RESTARTS) {
+              restarts++;
+              setVoiceStatus('🔇 Noise or silence… still listening.', 'warn');
+              setTimeout(() => {
+                try { recognition && recognition.abort(); } catch(_) {}
+                startOnce();                      // try again quietly
+              }, 150);
+            } else {
+              // fall back to your original “didn’t catch” UX after a few tries
+              stopReactionTimer();
+              voiceRoundActive = false;
+              setVoiceStatus('🤔 Didn’t catch a weekday. Click “Voice Mode” and try again.', 'warn');
+              resolve();
+            }
+          };
+
+          let heardDay = null;
+          let lastTranscript = "";
+          let allWordsHeard = [];
+
+          let recognition;
+
+          const startOnce = () => {
+            recognition = new ASR();
+            recognition.lang = 'en-US';
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 3;
+            recognition.continuous = false;   // keep your original setting
+
+            recognition.onstart = () => {
+              setVoiceStatus('🎤 Listening… say the weekday!', 'listening');
+              startReactionTimer();
+              allWordsHeard = [];
+              resetInactivity();
+            };
+
+            recognition.onresult = (event) => {
+              resetInactivity();
+
+              // Collect all transcript so far (including interim)
+              let transcript = "";
+              for (let i = 0; i < event.results.length; i++) {
+                transcript += (event.results[i][0] && event.results[i][0].transcript ? event.results[i][0].transcript : '') + " ";
+              }
+              transcript = transcript.trim();
+              lastTranscript = transcript;
+
+              // Ignore very short/noisy captures (e.g., coughs, clicks)
+              const lettersOnly = transcript.replace(/[^a-z]/ig,'');
+              if (!lettersOnly || lettersOnly.length < MIN_CHARS) {
+                setVoiceStatus('👂 Heard something…', 'hearing');
+                return;
+              }
+
+              // Add new words to buffer, skipping common fillers
+              transcript.split(/\s+/).forEach(w => {
+                const clean = (w || '').toLowerCase().replace(/[^a-z]/g,'');
+                if (clean && !FILLERS.has(clean) && !allWordsHeard.includes(clean)) {
+                  allWordsHeard.push(clean);
+                }
+              });
+
+              // Search for a weekday, ignore fillers
+              let foundDay = null;
+              for (let word of allWordsHeard) {
+                let weekday = normalizeToWeekday(word);
+                if (weekday) { foundDay = weekday; break; }
+              }
+              // If not found, check if any phrase contains a weekday
+              if (!foundDay && transcript) {
+                for (let k of Object.keys(dayAliases)) {
+                  if (transcript.toLowerCase().includes(k)) { foundDay = dayAliases[k]; break; }
+                }
+              }
+
+              if (foundDay) {
+                heardDay = foundDay;
+                try { recognition.stop(); } catch(_) {}
+              } else {
+                setVoiceStatus(`👂 Heard: “${transcript}” … (say a weekday)`, 'hearing');
+              }
+            };
+
+            recognition.onerror = (e) => {
+              // don’t nuke the round on tiny noises—retry softly
+              softRestart(e.error || 'error');
+            };
+
+            recognition.onend = async () => {
+              if (!heardDay) {
+                // browsers sometimes end early; try again a few times before giving up
+                return softRestart('ended');
+              }
+
+              // === your original success flow ===
+              const btn = getDayButtonByLabel(heardDay) || [...document.querySelectorAll('#dayButtons button')][0];
+              checkAnswer(heardDay, btn);
+
+              const took = (performance.now() - voiceTimerStart) / 1000;
+              stopReactionTimer();
+              const correctDay = daysOfWeek[currentDate.getDay()];
+              const ok = (heardDay === correctDay);
+
+              await announceOutcome(ok, heardDay, took);
+              await new Promise(r => setTimeout(r, 250));
+
+              voiceRoundActive = false;
+              if (ok && loop && voiceModeShouldLoop) startVoiceRound(true);
+              resolve();
+            };
+
+            try { recognition.start(); }
+            catch (e) {
+              setVoiceStatus('❌ Could not start listening.', 'error');
+              stopReactionTimer();
+              voiceRoundActive = false;
+              voiceModeShouldLoop = false;
+              reject(e);
+            }
+          };
+
+          startOnce();
+        });
+      }
+
+
+      function announceOutcome(correct, heard, seconds = null) {
+        return new Promise((resolve) => {
+          if (!('speechSynthesis' in window)) return resolve();
+          const s = seconds != null ? seconds.toFixed(2) : null;
+          let line;
+          if (correct) {
+            const praise = ["Nice shot!", "Clean hit!", "Sharp!", "On point!", "Boom—headshot!"];
+            line = `${praise[Math.floor(Math.random() * praise.length)]} ${s ? `You answered in ${s} seconds.` : ''}`;
+          } else {
+            const correctDay = daysOfWeek[currentDate.getDay()];
+            line = `Close, but not quite. The correct day was ${correctDay}. ${s ? `Your answer time was ${s} seconds.` : ''}`;
+          }
+
+          // --- If in historic mode + voice mode, say the fun fact as well
+          if (historicMode && voiceRoundActive) {
+            // Try to get the fun fact DOM content
+            const funFactNode = document.querySelector('.funfact-desc');
+            if(funFactNode && funFactNode.textContent.trim().length > 0) {
+              // Add a pause before fun fact for clarity
+              line += ` Did you know? On this day, ${funFactNode.textContent.trim()}`;
+            }
+          }
+
+          const u = new SpeechSynthesisUtterance(line);
+          const v = pickExpressiveVoice();
+          if (v) u.voice = v;
+          u.rate = correct ? 1.06 : 1.0;
+          u.pitch = correct ? 1.15 : 1.0;
+          u.onend = () => resolve();
+          u.onerror = () => resolve();
+          try {
+            window.speechSynthesis.speak(u);
+          } catch (_) {
+            resolve();
+          }
+        });
+      }
+
+      // Add this to allow user to stop voice mode loop
+      function stopVoiceMode() {
+        voiceModeShouldLoop = false;
+        voiceRoundActive = false;
+        setVoiceStatus('🛑 Voice mode stopped.', 'info');
+        showVoiceUI(false);
+        try { if (recognition) recognition.abort(); } catch(_){}
+        stopReactionTimer();
+      }
+
+      // Bind the button (autoplay enabled)
+      document.getElementById('voiceModeBtn').onclick = () => {
+      	unlockGunshotAudio();               // 👈 unlock with a real click
+      	voiceModeShouldLoop = true;
+
+        startVoiceRound(true);
+      };
+
+
+
+
+    </script>
+</body>
+</html>

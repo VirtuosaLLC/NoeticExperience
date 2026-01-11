@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cal²: Power Trainer & Geometry</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      box-sizing: border-box;
+      min-height: 100vh;
+      background: transparent !important; /* For Matrix effect */
+      font-family: 'Orbitron', 'Courier New', Courier, monospace;
+      color: #fff;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      overflow-x: hidden;
+    }
+    #matrix-bg {
+      position: fixed;
+      z-index: 0;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity .5s;
+      background: #000;
+    }
+    .sidebar-nav, .sidebar-toggle, .hud, .main-container, .geometry-app {
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-nav {
+      position: fixed;
+      top: 70px;
+      left: 20px;
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(17,17,17,0.85);
+      border-radius: 18px;
+      padding: 18px 10px;
+      box-shadow: 0 5px 24px #000b, 0 0 2px #43e97b66;
+      align-items: center;
+      transition: left .18s;
+    }
+    .sidebar-nav button {
+      background: #ff3333;
+      color: #fff;
+      border: 2px solid #222;
+      padding: 0.6rem 1.6rem;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      letter-spacing: 1.1px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 3px 10px #0008;
+      transition: background 0.17s, transform 0.13s;
+      font-weight: bold;
+      outline: none;
+      width: 130px;
+      margin: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+    }
+    .sidebar-nav button.active, .sidebar-nav button.selected {
+      background: linear-gradient(90deg,#43e97b 65%, #3bc36b 120%);
+      color: #111;
+      border: 2px solid #ff3333;
+    }
+    .sidebar-nav button:hover {
+      background: #ff6666;
+      transform: scale(1.07);
+    }
+    .sidebar-nav .sidebar-label {
+      font-size: 1.07em;
+      color: #43e97b;
+      margin-bottom: 3px;
+      text-shadow: 0 2px 8px #000a;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      pointer-events: none;
+    }
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      left: 10px;
+      z-index: 999;
+      font-size: 1.6rem;
+      padding: 6px 12px;
+      background: #ff3333;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 0 10px #000a;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .sidebar-toggle {
+        display: block;
+      }
+      .sidebar-nav.collapsed {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav {
+        transition: transform .3s ease, opacity .3s ease;
+      }
+      .sidebar-nav {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav:not(.collapsed) {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+    @media (max-width: 800px) {
+      .sidebar-nav {
+        left: 3px;
+        padding: 9px 4px;
+      }
+      .sidebar-nav button {
+        width: 98px;
+        font-size: 1em;
+        padding: 0.48rem 0.6rem;
+      }
+    }
+    @media (max-width: 600px) {
+      .sidebar-nav {
+        flex-direction: row;
+        bottom: 0;
+        left: 0;
+        top: unset;
+        width: 100vw;
+        justify-content: center;
+        background: rgba(17,17,17,0.92);
+        border-radius: 0;
+        box-shadow: 0 -3px 18px #000b, 0 0 2px #43e97b66;
+        padding: 8px 0 10px 0;
+      }
+      .sidebar-nav .sidebar-label {
+        display: none;
+      }
+      .sidebar-nav button {
+        width: 33vw;
+        min-width: 90px;
+        max-width: 160px;
+        font-size: 1.07em;
+      }
+    }
+
+    .hud {
+      width: 100vw;
+      max-width: 100vw;
+      background: linear-gradient(90deg, #111 30%, #222 80%);
+      box-shadow: 0 4px 20px #000a, 0 0 2px #0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      font-size: 1.1rem;
+      padding: 10px 0 8px 0;
+      letter-spacing: 1.5px;
+      user-select: none;
+      gap: 7px;
+      flex-wrap: wrap;
+      flex-direction: row;
+      z-index: 2;
+    }
+    @media (max-width: 700px) {
+      .hud > * {
+        margin: 2px auto;
+      }
+      .hud .timer {
+        margin: 0 auto;
+      }
+      .hud .pause-btn, .hud .music-btn {
+        font-size: 1.3em;
+      }
+    }
+    .hud .doomguy {
+      font-size: 2.2rem;
+      filter: drop-shadow(0 0 10px #f00a);
+      margin-right: 6px;
+    }
+    .hud .streak {
+      font-weight: bold;
+      color: #43e97b;
+      font-size: 1.3em;
+      margin-left: 8px;
+    }
+    .hud .timer {
+      color: #fff;
+      background: #252525;
+      border-radius: 7px;
+      box-shadow: 0 0 7px #f00a;
+      padding: 4px 18px;
+      font-size: 1.3em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 7px;
+    }
+    .hud .pause-btn, .hud .music-btn {
+      background: none;
+      border: none;
+      color: #43e97b;
+      font-size: 1.5em;
+      margin-left: 7px;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .hud .pause-btn:hover, .hud .music-btn:hover {
+      color: #fff;
+      transform: scale(1.1);
+    }
+    .hud .century-select {
+      background: #43e97b;
+      color: #222;
+      border-radius: 9px;
+      border: none;
+      padding: 4px 8px;
+      margin-left: 5px;
+      font-size: 1em;
+      font-family: inherit;
+      font-weight: bold;
+      outline: none;
+      box-shadow: 0 2px 8px #0006;
+      cursor: pointer;
+    }
+
+    .geometry-app {
+      width: min(100vw, 1120px);
+      margin: 0 auto;
+      margin-top: 24px;
+      margin-bottom: 36px;
+      display: block; /* always visible */
+      animation: fadeIn 0.7s;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(45px);}
+      100% { opacity: 1; transform: none;}
+    }
+    .geometry-row {
+      display: grid;
+      gap: 20px;
+    }
+    @media (min-width:980px) {
+      .geometry-row { grid-template-columns:1.2fr 1fr; align-items:stretch;}
+    }
+    .geometry-card {
+      background: linear-gradient(100deg,rgba(34,255,90,0.06) 0%,rgba(65,209,255,.04) 100%);
+      border: 2.5px solid #43e97b;
+      border-radius: 18px;
+      box-shadow: 0 6px 38px #43e97b11, 0 0 2px #fff;
+      padding: 24px 20px 22px;
+      backdrop-filter: blur(6px);
+      position: relative;
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .geometry-card:focus-within {
+      box-shadow: 0 0 24px #43e97baa, 0 0 3px #fff;
+      border-color: #ff3333;
+    }
+    .geometry-title {
+      font-size: 2.1rem;
+      letter-spacing: 2.5px;
+      text-shadow: 0 0 12px #43e97b99, 0 2px 8px #f00a;
+      font-weight: 900;
+      margin: 0 0 4px 0;
+      text-align: left;
+      user-select: none;
+    }
+    .geometry-muted {
+      color: #43e97b;
+      font-size: 1.05em;
+      margin-bottom: 6px;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+    .geometry-question {
+      font-size: 1.23em;
+      margin: 14px 0 10px;
+      line-height:1.35;
+      text-shadow: 0 1px 6px #222a;
+      font-weight: 800;
+      color: #43e97b;
+      letter-spacing: 1px;
+    }
+    .geometry-hud {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .geometry-pill {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:1.08em;
+      background:rgba(67,233,123,0.09);
+      color:#43e97b;
+      border:1.7px solid #43e97b;
+      box-shadow:0 0 6px #43e97b44;
+    }
+    .geometry-pill.ok { background:rgba(67,233,123,0.18); }
+    .geometry-pill.warn { background:rgba(255,51,51,0.16); color:#ff3333; border-color:#ff3333; }
+    .geometry-pill.accent { background:rgba(65,209,255,.12); color:#41d1ff; border-color:#41d1ff; }
+    .geometry-pill.yellow { background:rgba(255,209,102,.09); color:#ffd166; border-color:#ffd166; }
+    .geometry-controls {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .geometry-controls input[type="number"] {
+      background: #0f1621;
+      color: #fff;
+      border: 1.4px solid #43e97b77;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 1em;
+      width: 180px;
+      font-family: inherit;
+      font-weight: 800;
+    }
+    .geometry-controls select, .geometry-small-input {
+      background: #222;
+      color: #43e97b;
+      border: 1.2px solid #43e97b88;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-family: inherit;
+      font-size: 1em;
+    }
+    .geometry-small-input{width:72px;text-align:center;}
+    .geometry-controls button {
+      background: linear-gradient(90deg,#43e97b 70%, #3bc36b 120%);
+      color: #222;
+      border: 2.2px solid #ff3333;
+      padding: 10px 13px;
+      border-radius: 12px;
+      font-size: 1em;
+      font-family: inherit;
+      font-weight: 900;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px #000a, 0 0 2px #fff;
+      outline: none;
+      margin-bottom: 0;
+      min-width: 90px;
+      user-select: none;
+      transition: background 0.13s, box-shadow 0.13s, transform 0.09s;
+    }
+    .geometry-controls button:hover,
+    .geometry-controls button:focus {
+      background: #80ffb4;
+      color: #111;
+      transform: scale(1.06);
+      box-shadow: 0 8px 25px #43e97baa, 0 0 5px #fff;
+    }
+    .geometry-tiny {
+      font-size: 12.5px;
+      color: #43e97baa;
+      margin-top: 5px;
+      margin-bottom: 3px;
+    }
+    .geometry-feedback {
+      margin-top:8px;
+      min-height:24px;
+      font-weight:700;
+      font-size:1.09em;
+      text-shadow: 0 0 6px #fff5;
+      letter-spacing: 0.7px;
+      transition: color .19s;
+    }
+    .geometry-meter {
+      height:8px;
+      background:#0f1621;
+      border-radius:999px;
+      overflow:hidden;
+      border:1px solid #43e97b66;
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+    .geometry-meter>div {
+      height:100%;
+      background:linear-gradient(90deg,#43e97b,#41d1ff 90%);
+      width:0%;
+      transition:width 220ms cubic-bezier(.51,1.7,.41,.95);
+    }
+    .geometry-viz {
+      width:100%;
+      height:480px;
+      background:rgba(34,34,34,0.98);
+      border:2px solid #43e97b77;
+      border-radius:14px;
+      position:relative;
+      overflow:hidden;
+      margin-bottom:6px;
+      box-shadow: 0 0 14px #43e97b22, 0 0 2px #fff2;
+    }
+    .geometry-stage {
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+    }
+    .geometry-radius-label {
+      position:absolute;
+      left:100%;
+      top:50%;
+      transform:translate(14px,-50%);
+      font-weight:700;
+      color:#41d1ff;
+      text-shadow:0 0 14px rgba(65,209,255,.35);
+      white-space:nowrap;
+      font-size: 1.1em;
+    }
+    .geometry-area-label {
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+      font-weight:900;
+      font-size:18px;
+      color:#43e97b;
+      text-shadow:0 0 16px rgba(65,209,255,.25);
+      letter-spacing: 2px;
+    }
+    .geometry-right {
+      margin-left:auto;
+      font-size: 12.5px;
+      color: #43e97baa;
+    }
+    .geometry-kbd {
+      padding:2px 6px;
+      border:1px solid #43e97b99;
+      border-bottom-width:2px;
+      border-radius:6px;
+      font-size:12.5px;
+      color:#43e97b;
+      background:#111;
+      margin-right:2px;
+      margin-left:2px;
+      letter-spacing:1px;
+      font-family:inherit;
+      font-weight:800;
+      box-shadow:0 0 4px #43e97b44;
+    }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .rotor { display: inline-block; will-change: transform; }
+    .spin { animation: spin 18s linear infinite; }
+    @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+    @media (max-width: 980px) {
+      .geometry-app { width: 99vw; }
+      .geometry-row { grid-template-columns: 1fr; }
+      .geometry-card { padding: 14px 7vw 18px; }
+      .geometry-viz { height: 280px;}
+    }
+    @media (max-width: 600px) {
+      .geometry-viz { height: 170px;}
+      .geometry-title {font-size:1.16rem;}
+      .geometry-question {font-size:1.02rem;}
+      .geometry-card {padding: 8px 2vw 8px;}
+    }
+
+    .main-container { display: flex; flex-direction: column; align-items:center; width: 100%; }
+    .start-btn-wrapper { margin: 16px 0; }
+    .start-btn, #answerButtons button {
+      background: #ff3333;
+      color: #fff;
+      border: 2px solid #222;
+      padding: 0.7rem 1.4rem;
+      border-radius: 15px;
+      font-size: 1.1rem;
+      letter-spacing: 1.2px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 3px 12px #0007;
+      transition: background 0.2s, transform 0.09s;
+      font-weight: bold;
+      outline: none;
+      margin: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+    .start-btn:hover, #answerButtons button:hover { background:#ff6666; transform: scale(1.06); }
+    #answerButtons { display:flex; flex-wrap:wrap; justify-content:center; margin: 10px 0 14px; }
+    #questionDisplay {
+      font-size: 1.4rem;
+      background: #222;
+      color: #43e97b;
+      border: 2.5px solid #ff3333;
+      border-radius: 18px;
+      box-shadow: 0 0 20px #ff333355, 0 0 2px #fff;
+      padding: 14px 20px;
+      margin: 8px 0 12px;
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      user-select: none;
+    }
+    #levelDisplay, #levelUpCounter { font-weight: 800; color:#43e97b; margin: 2px 0; }
+    #strikeDisplay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(44,0,0,0.94);
+      color: #fff;
+      font-size: 2.2rem;
+      font-weight: bold;
+      padding: 20px 26px;
+      border-radius: 24px;
+      box-shadow: 0 4px 40px #f003, 0 0 5px #fff;
+      margin: 14px 0 0;
+      text-shadow: 0 0 10px #f00a, 0 0 3px #fff;
+      border: 3px solid #ff3333;
+      z-index: 4;
+      position: relative;
+      transition: opacity .25s;
+    }
+    #strikeDisplay.hidden { display:none; }
+
+    .fragment {
+      position: absolute;
+      bottom: 45%;
+      left: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #ff3333 60%, #222 100%);
+      opacity: 0.96;
+      pointer-events: none;
+      z-index: 12;
+      transform: translate(-50%,0) scale(1.45) rotate(0deg);
+      animation: fragment-fall 1.2s cubic-bezier(.61,1.7,.43,.99) forwards;
+      box-shadow: 0 0 12px #fff8, 0 0 3px #43e97b88;
+    }
+    .fragment.green {
+      background: linear-gradient(135deg, #43e97b 55%, #3bc36b 100%);
+      box-shadow: 0 0 15px #43e97bb7, 0 0 1px #fff;
+      opacity: 0.98;
+    }
+    @keyframes fragment-fall {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(1.45) rotate(0deg); }
+      70% { opacity: 1; }
+      85% { opacity: 0.9; }
+      100% {
+        opacity: 0;
+        transform:
+          translate(
+            calc(-50% + var(--frag-x, 0px)),
+            calc(250px + var(--frag-y, 0px))
+          )
+          scale(0.85)
+          rotate(var(--frag-rot, 20deg));
+      }
+    }
+    .clicked { animation: recoil 0.18s cubic-bezier(.78,-0.07,0,1.43); }
+    @keyframes recoil { 0% {transform: scale(1);} 40% {transform: scale(0.95);} 100% {transform: scale(1);} }
+    .correct {
+      background: linear-gradient(145deg,#43e97b 70%, #3bc36b 120%) !important;
+      color: #fff !important;
+      border: 2px solid #ffda00 !important;
+      box-shadow: 0 0 15px #43e97baa, 0 0 4px #fff;
+    }
+    .wrong {
+      background: #f00 !important;
+      border: 2px solid #900 !important;
+      color: #fff !important;
+      animation: wrongshake 0.19s;
+    }
+    @keyframes wrongshake {
+      0%,100%{transform:translate(0,0);}
+      30%{transform:translate(-8px,2px);}
+      60%{transform:translate(6px,-4px);}
+    }
+    .shake { animation: screenShake 0.23s 1; }
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-10px, 3px) rotate(-2.5deg); }
+      40% { transform: translate(7px, -8px) rotate(3deg); }
+      60% { transform: translate(-5px, 2px) rotate(-2deg); }
+      80% { transform: translate(5px, 0px) rotate(1.5deg); }
+    }
+
+    .geometry-flash {
+       position: fixed;
+       top: 0; left: 0; right: 0; bottom: 0;
+       width: 100vw; height: 100vh;
+       background: rgba(0,255,120,0.14);
+       z-index: 9999;
+       pointer-events: none;
+       opacity: 0;
+       transition: opacity 0.16s;
+       mix-blend-mode: lighten;
+     }
+     .geometry-flash.flash-green {
+       background: rgba(30,255,90,0.22);
+       opacity: 1;
+       animation: flashGreen 0.55s cubic-bezier(.8,0,.2,1);
+     }
+     .geometry-flash.flash-red {
+       background: rgba(255,50,50,0.20);
+       opacity: 1;
+       animation: flashRed 0.57s cubic-bezier(.8,0,.2,1);
+     }
+     @keyframes flashGreen {
+       0%   { opacity: 0.97; }
+       50%  { opacity: 1; }
+       100% { opacity: 0; }
+     }
+     @keyframes flashRed {
+       0%   { opacity: 0.94; }
+       50%  { opacity: 1; }
+       100% { opacity: 0; }
+     }
+
+     .fragment {
+       position: absolute;
+       bottom: 40%;
+       left: 50%;
+       width: 54px;
+       height: 54px;
+       border-radius: 19px;
+       background: linear-gradient(135deg, #ff3333 74%, #222 100%);
+       opacity: 0.98;
+       pointer-events: none;
+       z-index: 12;
+       transform: translate(-50%,0) scale(1.22) rotate(0deg);
+       animation: fragment-fall-big 1.76s cubic-bezier(.71,1.54,.39,.97) forwards;
+       box-shadow: 0 0 36px #fff8, 0 0 12px #43e97b88;
+       filter: blur(0.5px) saturate(1.3);
+     }
+     .fragment.green {
+       background: linear-gradient(135deg, #43e97b 75%, #3bc36b 100%);
+       box-shadow: 0 0 45px #43e97bb7, 0 0 4px #fff;
+       opacity: 0.99;
+     }
+     .fragment.red {
+       background: linear-gradient(135deg, #ff3333 85%, #700 100%);
+       box-shadow: 0 0 40px #ff3333bb, 0 0 3px #fff;
+       opacity: 0.99;
+     }
+     @keyframes fragment-fall-big {
+       0% {
+         opacity: 1;
+         transform: translate(-50%, 0) scale(1.22) rotate(0deg);
+       }
+       40% {
+         opacity: 1;
+         filter: blur(0.2px);
+       }
+       55% {
+         opacity: 0.96;
+         filter: blur(1.3px);
+       }
+       92% {
+         opacity: 0.86;
+         filter: blur(2.8px);
+       }
+       100% {
+         opacity: 0;
+         transform:
+           translate(
+             calc(-50% + var(--frag-x, 0px)),
+             calc(480px + var(--frag-y, 0px))
+           )
+           scale(1.05)
+           rotate(var(--frag-rot, 20deg));
+         filter: blur(5.5px);
+       }
+     }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-bg"></canvas>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar-nav collapsed" aria-label="Quick external links">
+    <span class="sidebar-label">Links</span>
+    <button onclick="window.location.href='Multiplication.html'" title="Multi">✖️ Multi</button>
+    <button onclick="window.location.href='index.html'" title="Cal">📅 Calendar</button>
+    <button onclick="window.location.href='Division.html'" title="Div">➗ Div</button>
+    <button onclick="window.location.href='https://shop.thenoeticexperience.com/'" title="Book">📖 Book</button>
+    <button onclick="window.location.href='Donation.html'" class="active" title="Donate">🪙 Donate</button>
+  </nav>
+
+  <!-- HUD -->
+  <div class="hud">
+    <span class="doomguy" id="doomguy-face">😀</span>
+    <span id="streakDisplay" class="streak">🔥 0</span>
+    <span class="timer" id="timerDisplay">⏱️ 1:00</span>
+    <button class="pause-btn" id="hudPauseBtn" onclick="togglePause()" aria-label="Pause or resume timer">⏸</button>
+    <button class="music-btn" id="musicPauseBtn" onclick="toggleMusic()" aria-label="Pause or play music">🎵⏸</button>
+    <select id="musicSelect" class="century-select" aria-label="Choose background music">
+      <option value="doom">DOOM</option>
+      <option value="lofi">Beethoven</option>
+      <option value="cyberpunk">Nitro</option>
+      <option value="relax">Relax</option>
+      <option value="think">Think</option>
+    </select>
+  </div>
+
+  <!-- GEOMETRY LIVE APP -->
+  <div class="geometry-app" id="geometryApp">
+    <div class="geometry-row">
+      <div class="geometry-card" aria-live="polite">
+        <h1 class="geometry-title">Geometry — Squares, Circles and Cubes</h1>
+        <div class="geometry-muted">Every prompt is a real-world scenario.</div>
+        <div class="geometry-question" id="geometryQuestion">Loading…</div>
+        <div class="geometry-hud">
+          <div class="geometry-pill ok" id="geometryStreak">Streak: 0</div>
+          <div class="geometry-pill accent">
+            Mode:&nbsp;
+            <select id="geometryMode">
+              <option value="square">Squares</option>
+              <option value="square_vol">Cube Volume</option>
+              <option value="circle">Circles</option>
+              <option value="cube">Cube Area</option>
+              <option value="mixed" selected>Mixed</option>
+            </select>
+          </div>
+          <div class="geometry-pill yellow">
+            <label><input id="geometryProMode" type="checkbox" /> Pro Mode</label>
+          </div>
+          <div class="geometry-pill accent">
+            <label>🎤 <input id="geometryVoiceMode" type="checkbox" /> Voice Mode</label>
+          </div>
+        </div>
+        <div class="geometry-controls">
+          <input id="geometryAnswer" type="number" placeholder="Enter value" inputmode="numeric" />
+          <button id="geometrySubmit" title="Submit (Enter)">Submit</button>
+          <button id="geometryNext" title="Next (N)">Next</button>
+          <button id="geometryReveal" title="Reveal (Space)">Reveal</button>
+          <button id="geometryReset" title="Reset (R)">Reset</button>
+          <div class="geometry-pill warn" id="geometryTimer">Time: 00.0s</div>
+        </div>
+        <div class="geometry-feedback" id="geometryFeedback"></div>
+        <div class="geometry-meter"><div id="geometryProgress"></div></div>
+      </div>
+      <div class="geometry-card">
+        <div class="geometry-viz" id="geometryViz">
+          <div class="geometry-stage">
+            <div class="square-wrap" id="geometrySquareWrap"></div>
+            <div class="circle-wrap" id="geometryCircleWrap" style="display:none;"></div>
+            <div class="cube-wrap" id="geometryCubeWrap" style="display:none;"></div>
+            <div class="geometry-area-label" id="geometryAreaLabel">units²</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Elements -->
+  <audio id="doomMusic" src="https://www.myinstants.com/media/sounds/doom-ost-e1m1-at-dooms-gatedodoc.mp3" loop></audio>
+  <audio id="lofiMusic" src="assets/bet1.mp3" loop></audio>
+  <audio id="cyberpunkMusic" src="assets/nitro.mp3" loop></audio>
+  <audio id="relaxMusic" src="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3" loop></audio>
+  <audio id="thinkMusic" src="https://www.bensound.com/bensound-music/bensound-scifi.mp3" loop></audio>
+  <audio id="clickSound" src="C:\Users\noenu\OneDrive\Desktop\Game\Gun+Reload.wav"></audio>
+  <audio id="correctSound" src="C:\Users\noenu\OneDrive\Desktop\Game\Explosion+7.wav"></audio>
+  <audio id="wrongSound" src="C:\Users\noenu\OneDrive\Desktop\Game\Wizard Laugh 3 - QuickSounds.com.mp3"></audio>
+  <audio id="gameOverSound" src="gameover.wav"></audio>
+  <audio id="levelUpSound" src="C:\Users\noenu\OneDrive\Desktop\Game\crowdhomerunapplause.wav"></audio>
+
+  <script>
+    // ======== PROMPTS =========
+    const GEOMETRY_PROMPTS = {
+      square: [
+        "Imagine this is a garden plot with sides ___ meters. What’s the total land area?",
+        "Think of a square room with each wall ___ meters long. How many square meters of carpet do you need?",
+        "Suppose you’re paving a square driveway with side ___ meters. How much area will it cover?",
+        "A city park has a square fountain plaza ___ meters per side. Find its total surface area.",
+        "This is a soccer mini-field, perfectly square, each side ___ meters. What’s the area?",
+        "You’re tiling a square patio of ___ meters per side. How many square meters of tiles do you need?",
+        "A farm plots land into perfect squares. One has side ___ meters. What’s its area?",
+        "This is a square pool cover, side length ___ meters. What’s the coverage?",
+        "You buy a square canvas with side ___ meters. What’s the painted surface area?",
+        "A billboard is a perfect square, each side ___ meters. How much space for ads?",
+        "This is a rooftop garden, shaped as a square of ___ meters per side. Find the area.",
+        "A courtyard is square with sides of ___ meters. How many square meters do you sweep?",
+        "You’re fencing a square playground, side ___ meters. What’s the area inside?",
+        "Imagine a square chocolate bar, ___ cm each side. What’s the eating surface?",
+        "You need to paint a square wall, side ___ meters. How much paint area?",
+        "Think of a chessboard, one big square side ___ meters. What’s the board’s area?",
+        "A square screen panel has a side of ___ meters. What’s the display area?",
+        "A square-shaped mirror is ___ meters per side. How many square meters of reflection?",
+        "This is a square glass window, side ___ meters. What’s its surface area?",
+        "A square rug is laid down, each side ___ meters. How many square meters does it cover?",
+        "You buy square tiles with side ___ cm. What’s the area of one tile?",
+        "A farmer makes a square wheat field with side ___ meters. What’s the field’s size?",
+        "A square billboard panel is ___ meters long per side. How much space for ads?",
+        "Imagine a square laptop screen of ___ cm side. What’s the display area?",
+        "This is a square solar panel, side ___ meters. What’s its energy-catching area?",
+        "A trampoline is perfectly square, side ___ meters. What’s the jumping surface?",
+        "The base of a square fountain is ___ meters per side. Find the base area.",
+        "Imagine a square chess mat, side ___ cm. What’s the playing area?",
+        "You’re mowing a square lawn of ___ meters per side. What’s the lawn area?",
+        "A flag is square, side ___ meters. What’s the cloth surface?",
+        "You’re covering a square table with side ___ meters. How many square meters of cloth?",
+        "A floor tile is square, side ___ cm. What’s its surface area?",
+        "This is a square greenhouse base, side ___ meters. How many square meters?",
+        "You build a square sandbox, side ___ meters. What’s the play area?",
+        "A square photo frame is ___ cm each side. What’s the photo’s surface?",
+        "A square plaza measures ___ meters on each side. Find the area.",
+        "A square wall art piece is ___ meters across. How big is it?",
+        "This is a square dance floor, side ___ meters. How much dancing area?",
+        "The base of a square tent is ___ meters each side. What’s its area?",
+        "Imagine a square pool, side ___ meters. How many square meters of water surface?",
+        "A city fountain sits on a square platform ___ meters per side. Find the platform’s area.",
+        "A parking spot is square, side ___ meters. What’s its space?",
+        "You’re paving a square courtyard, side ___ meters. Find its area.",
+        "A solar array panel is square, side ___ meters. How much energy area?",
+        "A square-shaped ice rink is ___ meters per side. What’s its skating surface?",
+        "A square mattress has sides ___ meters long. How much lying area?",
+        "A square kitchen tile is ___ cm per side. What’s its surface?",
+        "Imagine a square painting canvas, side ___ meters. How much area to paint?",
+        "This is a square football goal net, side ___ meters. What’s the net’s surface?",
+        "A square mirror is hung with side ___ meters. What’s the reflection surface area?"
+      ],
+      circle: [
+        "This is a pizza with radius ___ cm. What’s the eating surface?",
+        "Imagine a car tire, radius ___ cm. What’s the circular cross-section area?",
+        "A circular table has radius ___ meters. What’s the top surface area?",
+        "This is a coin of radius ___ cm. Find its area.",
+        "The base of a fountain is circular, radius ___ meters. What’s the area?",
+        "A circular plate has radius ___ cm. How much food fits on it?",
+        "The center circle of a soccer field has radius ___ meters. Find its area?",
+        "The circular clock face has radius ___ cm. What’s the display area?",
+        "A basketball hoop rim covers a circle radius ___ cm. What’s the opening area?",
+        "This is a circular swimming pool, radius ___ meters. What’s the water surface?",
+        "A manhole cover is a circle of radius ___ cm. What’s its area?",
+        "The lens of a telescope is circular, radius ___ cm. Find its surface.",
+        "A round dining table has radius ___ meters. What’s its eating surface?",
+        "This is a circular garden, radius ___ meters. What’s the planted area?",
+        "The face of a watch is circular, radius ___ cm. Find its area.",
+        "A circular pizza pan has radius ___ cm. What’s the area?",
+        "This is a circular rug, radius ___ meters. How much floor does it cover?",
+        "A round fountain base radius is ___ meters. Find the base area.",
+        "The circular dartboard has radius ___ cm. What’s the scoring area?",
+        "A Ferris wheel has a circular frame radius ___ meters. Find its circular area.",
+        "The circular face of a speaker has radius ___ cm. What’s its vibrating area?",
+        "A circular CD has radius ___ cm. What’s its surface?",
+        "The circular lid on a jar has radius ___ cm. Find its area.",
+        "A hula hoop outline makes a circle of radius ___ cm. What’s the enclosed area?",
+        "The circular window of a ship has radius ___ cm. What’s the glass area?",
+        "This is a round trampoline radius ___ meters. Find its jumping surface.",
+        "A circular cake has radius ___ cm. What’s the frosting surface?",
+        "The circular satellite dish has radius ___ meters. What’s the collecting surface?",
+        "A pizza slice comes from a pizza radius ___ cm. What’s the full pizza’s area?",
+        "The circular target board radius is ___ cm. Find the shooting area.",
+        "A frisbee has radius ___ cm. What’s the area of the disc?",
+        "A round mirror has radius ___ meters. What’s its reflecting surface?",
+        "The circular lid of a pot has radius ___ cm. What’s its surface?",
+        "A circular clock face radius ___ cm. What’s the area?",
+        "The base of a round cake has radius ___ cm. Find the base area.",
+        "This is a round picnic tablecloth radius ___ meters. Find its coverage.",
+        "A round cookie has radius ___ cm. What’s its area?",
+        "A circular plate radius ___ cm. How much space for food?",
+        "The base of a round pillar radius ___ cm. Find its footprint.",
+        "A circular water tank lid radius ___ meters. What’s its surface area?",
+        "This is a round shield radius ___ cm. Find its surface.",
+        "The circular garden fountain radius ___ meters. What’s its area?",
+        "A round tablecloth radius ___ meters. Find the cloth surface.",
+        "The circular medallion radius ___ cm. Find the area.",
+        "A circular pizza radius ___ cm. What’s the surface?",
+        "The circular face of a speaker radius ___ cm. Find its surface.",
+        "The base of a silo radius ___ meters. What’s its area?",
+        "This is a round drum top radius ___ cm. What’s its surface?",
+        "The circular park pond has radius ___ meters. Find the area.",
+        "The base of a round column radius ___ meters. What’s the footprint?"
+      ],
+      cube: [
+        "This is a shipping box, side ___ meters. What’s its surface area to wrap?",
+        "An Amazon cube box has sides ___ cm. How much cardboard surface is used?",
+        "This is a dice, side ___ cm. What’s its surface area?",
+        "A cube ice block has side ___ cm. What’s the area exposed?",
+        "A cube aquarium base has side ___ meters. Find the surface area of glass.",
+        "A cube toy block has side ___ cm. What’s the total area?",
+        "This is a cube storage container, side ___ meters. What’s its wrapping area?",
+        "A cube sugar block side is ___ cm. What’s its surface area?",
+        "This is a cube satellite, side ___ meters. How much surface area does it expose?",
+        "A cube chocolate box has side ___ cm. What’s its surface area?",
+        "This is a cube-shaped gift box, side ___ cm. How much wrapping paper?",
+        "A cube fridge model has side ___ meters. Find its surface area.",
+        "A cube candle mold has side ___ cm. What’s the area of wax surface?",
+        "This is a cube tent base side ___ meters. What’s its cloth surface?",
+        "A cube safe has side ___ meters. What’s the steel surface area?",
+        "This is a cube crate side ___ meters. Find the total area to paint.",
+        "A cube room measures ___ meters each side. What’s the wall+floor+ceiling surface area?",
+        "This is a cube aquarium, side ___ meters. Find its glass surface area.",
+        "A cube vault has side ___ meters. What’s the external area?",
+        "This is a cube storage chest side ___ meters. Find its surface area.",
+        "A cube package side ___ cm. How much tape+paper needed?",
+        "This is a cube building block, side ___ meters. Find its area.",
+        "A cube battery unit has side ___ cm. What’s its surface?",
+        "This is a cube server block, side ___ meters. Find its casing surface area.",
+        "A cube water tank side ___ meters. How much area does it expose?",
+        "This is a cube display case side ___ meters. Find its total area.",
+        "A cube puzzle block side ___ cm. What’s its surface?",
+        "This is a cube lantern side ___ cm. What’s its surface area?",
+        "A cube oven chamber side ___ meters. Find its surface area.",
+        "This is a cube freezer side ___ meters. Find its coating area.",
+        "A cube-shaped mini house side ___ meters. What’s its outside surface?",
+        "This is a cube storage cube side ___ cm. Find the surface area.",
+        "A cube battery pack side ___ cm. What’s its casing area?",
+        "This is a cube hologram unit side ___ meters. What’s its surface area?",
+        "A cube-shaped planter box side ___ meters. Find its surface area.",
+        "This is a cube cooling box side ___ cm. What’s its surface?",
+        "A cube treasure chest side ___ meters. How much surface area?",
+        "This is a cube shipping crate side ___ meters. Find its wrapping area.",
+        "A cube toy dice side ___ cm. What’s its surface area?",
+        "This is a cube vault door casing side ___ meters. Find the area.",
+        "A cube ice chest side ___ cm. What’s its surface area?",
+        "This is a cube data server side ___ meters. What’s its surface area?",
+        "A cube speaker unit side ___ cm. Find the casing surface.",
+        "This is a cube gift package side ___ cm. What’s its wrapping paper need?",
+        "A cube cooler box side ___ cm. Find its surface area.",
+        "This is a cube building block side ___ meters. Find the total surface.",
+        "A cube measurement box side ___ cm. What’s its surface area?",
+        "This is a cube box side ___ meters. How much area to paint?",
+        "A cube battery case side ___ cm. What’s its surface area?",
+        "This is a cube safe deposit box side ___ meters. What’s its surface?"
+      ],
+      square_vol: [
+        "A square pool has sides ___ meters. If filled to a height of ___ meters, what is its volume?",
+        "A sandbox is square, each side ___ meters, and you fill it ___ meters deep. What's the sand volume?",
+        "A square planter box is ___ meters on each side and ___ meters tall. Find its volume.",
+        "A square tank base ___ meters per side, filled ___ meters high. What's the water volume?",
+        "A square cake is baked, side ___ meters, height ___ meters. What's the total cake volume?",
+        "A square flowerbed is ___ meters per side, soil filled to ___ meters. How much soil (in m³)?"
+      ]
+    };
+
+    // SIDEBAR
+    function toggleSidebar() {
+      document.querySelector('.sidebar-nav').classList.toggle('collapsed');
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      if(window.innerWidth <= 600) {
+        document.querySelector('.sidebar-nav').classList.add('collapsed');
+      } else {
+        document.querySelector('.sidebar-nav').classList.remove('collapsed');
+      }
+    });
+
+    function wordsToNumber(words) {
+      // Simple parser for English numbers up to 9999, can be extended!
+      const small = {
+        zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9,
+        ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19
+      };
+      const tens = {
+        twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90
+      };
+      let tokens = words.toLowerCase().replace(/[^a-z\s\d]/g,'').split(/\s+/);
+      let n = 0, current = 0;
+      for(let w of tokens) {
+        if(small[w] != null) current += small[w];
+        else if(tens[w]) current += tens[w];
+        else if(w === "hundred") current *= 100;
+        else if(w === "thousand") { n += current * 1000; current = 0; }
+        else if(Number(w)) current += Number(w);
+      }
+      return n + current;
+    }
+
+    // MUSIC
+    const musicTracks = {
+      doom: document.getElementById('doomMusic'),
+      lofi: document.getElementById('lofiMusic'),
+      cyberpunk: document.getElementById('cyberpunkMusic'),
+      relax: document.getElementById('relaxMusic'),
+      think: document.getElementById('thinkMusic'),
+    };
+    let currentMusic = 'doom';
+    const musicPauseBtn = document.getElementById('musicPauseBtn');
+    const musicSelect = document.getElementById('musicSelect');
+    function playMusic(track) {
+      Object.values(musicTracks).forEach(m => {
+        m.pause();
+        m.currentTime = 0;
+      });
+      musicTracks[track].play();
+      musicPauseBtn.innerHTML = '🎵⏸';
+      musicPauseBtn.setAttribute('aria-label', 'Pause music');
+    }
+    function pauseMusic(track) {
+      musicTracks[track].pause();
+      musicPauseBtn.innerHTML = '🎵▶️';
+      musicPauseBtn.setAttribute('aria-label', 'Play music');
+    }
+    function isMusicPaused(track) {
+      return musicTracks[track].paused;
+    }
+    function toggleMusic() {
+      if (isMusicPaused(currentMusic)) {
+        musicTracks[currentMusic].play();
+        musicPauseBtn.innerHTML = '🎵⏸';
+        musicPauseBtn.setAttribute('aria-label', 'Pause music');
+      } else {
+        musicTracks[currentMusic].pause();
+        musicPauseBtn.innerHTML = '🎵▶️';
+        musicPauseBtn.setAttribute('aria-label', 'Play music');
+      }
+    }
+    musicSelect.addEventListener('change', function () {
+      currentMusic = this.value;
+      playMusic(currentMusic);
+    });
+    window.addEventListener('beforeunload', () => {
+      Object.values(musicTracks).forEach(m => m.pause());
+    });
+
+    // ========== GEOMETRY MAIN ==========
+    const qEl = document.getElementById('geometryQuestion');
+    const streakEl = document.getElementById('geometryStreak');
+    const timerEl = document.getElementById('geometryTimer');
+    const ansEl = document.getElementById('geometryAnswer');
+    const geometryCard = document.getElementById('geometrySubmit').closest('.geometry-card');
+    const submitBtn = document.getElementById('geometrySubmit');
+    const nextBtn = document.getElementById('geometryNext');
+    const revealBtn = document.getElementById('geometryReveal');
+    const resetBtn = document.getElementById('geometryReset');
+    const feedbackEl = document.getElementById('geometryFeedback');
+    const progressEl = document.getElementById('geometryProgress');
+    const areaLabel = document.getElementById('geometryAreaLabel');
+    const modeEl = document.getElementById('geometryMode');
+    const squareWrap = document.getElementById('geometrySquareWrap');
+    const circleWrap = document.getElementById('geometryCircleWrap');
+    const cubeWrap = document.getElementById('geometryCubeWrap');
+    const proModeEl = document.getElementById('geometryProMode');
+    const voiceModeEl = document.getElementById('geometryVoiceMode');
+
+    let currentN = null;
+    let currentAns = null;
+    let currentType = 'square';
+    let currentUnit = 'm';
+    let geometryStreak = 0;
+    let startedAt = 0;
+    let raf = null;
+    let voiceModeActive = false;
+    let voiceTimerStarted = false;
+    let recognition = null;
+    let speechSynthesisUtterance = null;
+    let voiceRecognitionActive = false;
+
+    const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+    const randInt=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+
+    // ==== VOICE (unchanged) ====
+    const VOICE_CORRECT_LINES = [
+      (t) => `Awesome! You got it in ${t} seconds.`,
+      (t) => `Bullseye! Answered in ${t} seconds flat.`,
+      (t) => `Sharp thinking! That took just ${t} seconds.`,
+      (t) => `Correct, and in only ${t} seconds. Well played!`,
+      (t) => `Nice job! You answered in ${t} seconds.`,
+      (t) => `Lightning fast! Only ${t} seconds.`,
+      (t) => `On point! ${t} seconds to solve it.`,
+      (t) => `Superb! ${t} seconds from question to answer.`,
+      (t) => `Impressive! You nailed it in ${t} seconds.`,
+      (t) => `Quick math! ${t} seconds.`
+    ];
+    const VOICE_WRONG_LINES = [
+      (a) => `Nice try, but the answer was ${a}.`,
+      (a) => `Almost! The correct answer is ${a}.`,
+      (a) => `Not quite. It's actually ${a}.`,
+      (a) => `Oof! The correct response is ${a}.`,
+      (a) => `Close, but it’s ${a}.`,
+      (a) => `Oops! The answer is ${a}.`,
+      (a) => `That was a good attempt. Correct is ${a}.`,
+      (a) => `No worries! The right answer: ${a}.`,
+      (a) => `Don't sweat it. The answer is ${a}.`,
+      (a) => `Almost there. The correct answer is ${a}.`
+    ];
+    let loadedVoices = [];
+    function loadVoices() {
+      loadedVoices = window.speechSynthesis ? (window.speechSynthesis.getVoices() || []) : [];
+    }
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    function pickExpressiveVoice() {
+      const preferred = [
+        /Google US English/i,
+        /Google UK English Female/i,
+        /Samantha/i,
+        /Victoria/i
+      ];
+      for (const rx of preferred) {
+        const v = loadedVoices.find(v => rx.test(v.name));
+        if (v) return v;
+      }
+      const anyEN = loadedVoices.find(v => /en(-|_)?/i.test(v.lang));
+      return anyEN || loadedVoices[0] || null;
+    }
+    // Setup SpeechRecognition cross-browser
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    function speak(text, opts = {}, cb) {
+      if (!window.speechSynthesis) return cb && cb();
+      speechSynthesis.cancel();
+      let u = new window.SpeechSynthesisUtterance(text);
+      u.rate = opts.rate ?? 1.18;
+      u.pitch = opts.pitch ?? 1.01;
+      u.lang = opts.lang || "en-US";
+      const v = pickExpressiveVoice();
+      if (v) u.voice = v;
+      let track = null;
+      try { track = currentMusic && musicTracks[currentMusic]; if (track && !track.paused) track.volume = 0.22; } catch(_){}
+      u.onend = () => { 
+        try { if (track) track.volume = 1.0; } catch(_){}
+        cb && cb(); 
+      };
+      u.onerror = () => { 
+        try { if (track) track.volume = 1.0; } catch(_){}
+        cb && cb(); 
+      };
+      window.speechSynthesis.speak(u);
+      speechSynthesisUtterance = u;
+    }
+    function speakGeometryQuestion() {
+      if (!voiceModeActive) return;
+      if (!window.speechSynthesis) return;
+      let text = qEl.textContent.replace(/\(.*?\)/g,'').replace(/Answer (in|as).*/,'');
+      if(currentType==='circle'){
+        text += ". Answer as the number k in k times pi.";
+      }
+      speak(text, { rate: 1.13, pitch: 1.07 }, () => {
+        setTimeout(() => {
+          voiceTimerStarted = true;
+          startGeometryTimer();
+          startGeometryRecognition();
+        }, 150); // small pause after question
+      });
+    }
+    function speakGeometryFeedback(correct, timeOrAns, cb) {
+      if (!voiceModeActive) return cb && cb();
+      let line;
+      if (correct) {
+        const t = timeOrAns;
+        line = VOICE_CORRECT_LINES[Math.floor(Math.random()*VOICE_CORRECT_LINES.length)](t);
+        speak(line, { rate: 1.19, pitch: 1.04 }, () => setTimeout(cb, 700));
+      } else {
+        const ans = timeOrAns;
+        line = VOICE_WRONG_LINES[Math.floor(Math.random()*VOICE_WRONG_LINES.length)](ans);
+        speak(line, { rate: 1.10, pitch: 1.01 }, () => setTimeout(cb, 850));
+      }
+    }
+    function startGeometryRecognition() {
+      if (!voiceModeActive || !window.SpeechRecognition) return;
+      if (recognition) {
+        recognition.onresult = recognition.onerror = recognition.onend = null;
+        try { recognition.stop(); } catch{ }
+        recognition = null;
+      }
+      recognition = new window.SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = true; // KEY: get partial results
+      recognition.maxAlternatives = 2;
+      voiceRecognitionActive = true;
+
+      let heardText = "";
+      let silenceTimer = null;
+
+      function processTranscript(text) {
+        let answer = null;
+        // Try to extract a number directly from digits
+        let num = text.replace(/[^0-9.]+/g, '');
+        if (num && !isNaN(Number(num))) {
+          answer = Number(num);
+        } else {
+          // Try parsing as words
+          let parsed = wordsToNumber(text);
+          if (!isNaN(parsed) && parsed > 0) answer = parsed;
+        }
+        if (answer !== null) {
+          ansEl.value = answer;
+          voiceRecognitionActive = false;
+          recognition.onresult = recognition.onerror = recognition.onend = null;
+          try { recognition.stop(); } catch {}
+          geometrySubmit(true);
+        } else {
+          feedbackEl.textContent = "🎤 Not recognized. Try again.";
+          setTimeout(startGeometryRecognition, 700);
+        }
+      }
+
+      recognition.onresult = function(event) {
+        // Accumulate all results (final or interim)
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript.trim() + " ";
+        }
+        heardText = transcript.trim();
+
+        // Reset/Start silence timer
+        if (silenceTimer) clearTimeout(silenceTimer);
+        // Wait 1.5s after each speech for possible further words
+        silenceTimer = setTimeout(() => {
+          processTranscript(heardText);
+        }, 1000);
+      };
+
+      recognition.onerror = function(event) {
+        voiceRecognitionActive = false;
+        recognition.onresult = recognition.onerror = recognition.onend = null;
+        try { recognition.stop(); } catch{}
+        feedbackEl.textContent = "🎤 Error with recognition. Try again.";
+        setTimeout(startGeometryRecognition, 800);
+      };
+
+      recognition.onend = function() {
+        // If user hasn't spoken, or timer not fired yet, restart
+        if (voiceRecognitionActive && heardText.length === 0) {
+          // Restart listening after a short delay if nothing was heard
+          setTimeout(startGeometryRecognition, 100);
+        }
+        // Otherwise, do nothing; the silence timer will process
+      };
+
+      recognition.start();
+    }
+    function stopGeometryVoice() {
+      speechSynthesis.cancel();
+      if (recognition) {
+        recognition.onresult = recognition.onerror = recognition.onend = null;
+        try{ recognition.stop(); } catch{}
+        recognition = null;
+      }
+      voiceRecognitionActive = false;
+      voiceTimerStarted = false;
+    }
+    function startGeometryTimer(){
+      startedAt = performance.now();
+      if (raf) cancelAnimationFrame(raf);
+      const loop=(ts)=>{
+        const e=ts-startedAt;
+        timerEl.textContent='Time: '+(e/1000).toFixed(1)+'s';
+        const pct=clamp(100*(1500/Math.max(400,e)),0,100);
+        progressEl.style.width=pct+'%';
+        raf=requestAnimationFrame(loop);
+      };
+      raf=requestAnimationFrame(loop);
+    }
+    function chooseType(){
+      const m=modeEl.value;
+      if(m==='mixed'){
+        const a=['square','circle','cube','square_vol'];
+        return a[Math.floor(Math.random()*a.length)];
+      }
+      return m;
+    }
+    function pickPrompt(type){
+      const list = GEOMETRY_PROMPTS[type];
+      const idx = Math.floor(Math.random()*list.length);
+      const template = list[idx];
+      const unit = template.includes(' cm') ? 'cm' : 'm';
+      return { template, unit };
+    }
+    function fillPrompt(template, n){ return template.replace(/___/g, n); }
+    function unitSq(u){ return u + '²'; }
+
+    function newGeometryQuestion(){
+      stopGeometryVoice();
+      currentType = chooseType();
+      let template, unit;
+      if(currentType==='square_vol'){
+        currentN = randInt(10, 99);
+        template = GEOMETRY_PROMPTS.square_vol[Math.floor(Math.random()*GEOMETRY_PROMPTS.square_vol.length)];
+        currentUnit = 'm';
+        qEl.textContent = template.replace(/___/g, currentN) + " (Answer in m³)";
+        areaLabel.textContent = proModeEl && proModeEl.checked ? '' : `${currentN} × ${currentN} × ${currentN} m³`;
+        ansEl.placeholder = "Enter volume (m³)";
+        currentAns = Math.pow(currentN, 3);
+        drawAnimatedCube(currentN);
+        squareWrap.style.display='none'; circleWrap.style.display='none'; cubeWrap.style.display='';
+      } else if(currentType==='square'){
+        const picked = pickPrompt(currentType);
+        template = picked.template; unit = picked.unit;
+        currentUnit = unit;
+        currentN = randInt(10, 99);
+        drawAnimatedSquare(currentN);
+        currentAns = currentN*currentN;
+        qEl.textContent = fillPrompt(template, currentN) + ` (Answer in ${unitSq(currentUnit)})`;
+        areaLabel.textContent = proModeEl && proModeEl.checked ? '' : `${currentN} × ${currentN} ${unitSq(currentUnit)}`;
+        ansEl.placeholder = `Enter area (${unitSq(currentUnit)})`;
+        squareWrap.style.display=''; circleWrap.style.display='none'; cubeWrap.style.display='none';
+      } else if(currentType==='circle'){
+        const picked = pickPrompt(currentType);
+        template = picked.template; unit = picked.unit;
+        currentUnit = unit;
+        currentN = randInt(10, 99);
+        drawAnimatedCircle(currentN, currentUnit);
+        currentAns = currentN*currentN;
+        qEl.textContent = fillPrompt(template, currentN) + ` (Answer as k where area = k·π ${unitSq(currentUnit)})`;
+        areaLabel.textContent = proModeEl && proModeEl.checked ? '' : `${currentN} × ${currentN} × π ${unitSq(currentUnit)}`;
+        ansEl.placeholder = `Enter k for k·π (${unitSq(currentUnit)})`;
+        squareWrap.style.display='none'; circleWrap.style.display=''; cubeWrap.style.display='none';
+      } else {
+        const picked = pickPrompt(currentType);
+        template = picked.template; unit = picked.unit;
+        currentUnit = unit;
+        currentN = randInt(10, 99);
+        drawAnimatedCube(currentN);
+        currentAns = 6*currentN*currentN;
+        qEl.textContent = fillPrompt(template, currentN) + ` (Answer in ${unitSq(currentUnit)})`;
+        areaLabel.textContent = proModeEl && proModeEl.checked ? '' : `6 × ${currentN} × ${currentN} ${unitSq(currentUnit)}`;
+        ansEl.placeholder = `Enter surface area (${unitSq(currentUnit)})`;
+        squareWrap.style.display='none'; circleWrap.style.display='none'; cubeWrap.style.display='';
+      }
+      feedbackEl.textContent=''; ansEl.value=''; ansEl.focus();
+      if (voiceModeActive) {
+        voiceTimerStarted = false;
+        setTimeout(speakGeometryQuestion, 400);
+      } else {
+        startGeometryTimer();
+      }
+    }
+
+    function drawAnimatedSquare(side){
+      const svgNS='http://www.w3.org/2000/svg';
+      squareWrap.style.display=''; squareWrap.innerHTML=''; circleWrap.style.display='none'; cubeWrap.style.display='none';
+      const px = 80 + (side-10)/(99-10)*240; const size = Math.max(40, Math.min(360, px)); const stroke=3;
+      const svg = document.createElementNS(svgNS,'svg'); svg.setAttribute('width', size+2*stroke); svg.setAttribute('height', size+2*stroke); svg.setAttribute('viewBox',`0 0 ${size+2*stroke} ${size+2*stroke}`);
+      const outline = document.createElementNS(svgNS,'rect'); outline.setAttribute('x',stroke); outline.setAttribute('y',stroke); outline.setAttribute('width',size); outline.setAttribute('height',size); outline.setAttribute('rx','4'); outline.setAttribute('fill','none'); outline.setAttribute('stroke','rgba(255,255,255,.5)'); outline.setAttribute('stroke-width',String(stroke)); svg.appendChild(outline);
+      const fill = document.createElementNS(svgNS,'rect'); fill.setAttribute('x',stroke); fill.setAttribute('y',stroke+size); fill.setAttribute('width',size); fill.setAttribute('height',0); fill.setAttribute('fill','rgba(67,233,123,0.25)'); svg.appendChild(fill);
+      const rotor = document.createElement('div'); rotor.className='rotor spin'; rotor.appendChild(svg);
+      squareWrap.appendChild(rotor);
+      const dur=650,start=performance.now(); (function anim(ts){ const t=Math.min(1,(ts-start)/dur); const h=t*size; fill.setAttribute('y',String(stroke+size-h)); fill.setAttribute('height',String(h)); if(t<1) requestAnimationFrame(anim); })(start);
+    }
+    function drawAnimatedCircle(radius){
+      const svgNS='http://www.w3.org/2000/svg';
+      circleWrap.style.display=''; circleWrap.innerHTML=''; squareWrap.style.display='none'; cubeWrap.style.display='none';
+      const rPx = 40 + (radius-10)/(99-10)*120; const stroke=3; const size=(rPx+stroke)*2;
+      const svg = document.createElementNS(svgNS,'svg'); svg.setAttribute('width',size); svg.setAttribute('height',size); svg.setAttribute('viewBox',`0 0 ${size} ${size}`);
+      const outline=document.createElementNS(svgNS,'circle'); outline.setAttribute('cx',size/2); outline.setAttribute('cy',size/2); outline.setAttribute('r',rPx); outline.setAttribute('fill','none'); outline.setAttribute('stroke','rgba(255,255,255,.5)'); outline.setAttribute('stroke-width',String(stroke)); svg.appendChild(outline);
+      const disk=document.createElementNS(svgNS,'circle'); disk.setAttribute('cx',size/2); disk.setAttribute('cy',size/2); disk.setAttribute('r',0); disk.setAttribute('fill','rgba(65,209,255,.25)'); svg.appendChild(disk);
+      const rotor = document.createElement('div'); rotor.className='rotor spin'; rotor.appendChild(svg);
+      circleWrap.appendChild(rotor);
+      const dur=650,start=performance.now(); (function anim(ts){ const t=Math.min(1,(ts-start)/dur); const eased=t<.5?2*t*t:-1+(4-2*t)*t; disk.setAttribute('r',String(eased*rPx)); if(t<1) requestAnimationFrame(anim); })(start);
+      let label=circleWrap.querySelector('.geometry-radius-label'); if(!label){ label=document.createElement('div'); label.className='geometry-radius-label'; circleWrap.appendChild(label);} label.textContent=`${radius} ${currentUnit}`;
+    }
+    function drawAnimatedCube(side){
+      const svgNS='http://www.w3.org/2000/svg';
+      cubeWrap.style.display=''; cubeWrap.innerHTML=''; squareWrap.style.display='none'; circleWrap.style.display='none';
+      const base = 90 + (side-10)/(99-10)*90; const size=Math.max(70,Math.min(200,base)); const offset=Math.round(size*0.27);
+      const svg=document.createElementNS(svgNS,'svg'); svg.setAttribute('width',size+offset*2); svg.setAttribute('height',size+offset*2); svg.setAttribute('viewBox',`0 0 ${size+offset*2} ${size+offset*2}`); svg.style.transform='scale(.8)'; svg.style.opacity='0';
+      const back=document.createElementNS(svgNS,'rect'); back.setAttribute('x',0); back.setAttribute('y',0); back.setAttribute('width',size); back.setAttribute('height',size); back.setAttribute('fill','rgba(65,209,255,.05)'); back.setAttribute('stroke','rgba(255,255,255,.3)'); svg.appendChild(back);
+      const front=document.createElementNS(svgNS,'rect'); front.setAttribute('x',offset); front.setAttribute('y',offset); front.setAttribute('width',size); front.setAttribute('height',size); front.setAttribute('fill','rgba(67,233,123,0.16)'); front.setAttribute('stroke','rgba(255,255,255,.6)'); svg.appendChild(front);
+      const edges=[[0,0,offset,offset],[size,0,size+offset,offset],[0,size,offset,size+offset],[size,size,size+offset,size+offset]];
+      edges.forEach(([x1,y1,x2,y2])=>{ const line=document.createElementNS(svgNS,'line'); line.setAttribute('x1',x1); line.setAttribute('y1',y1); line.setAttribute('x2',x2); line.setAttribute('y2',y2); line.setAttribute('stroke','rgba(255,255,255,.5)'); svg.appendChild(line);});
+      const rotor = document.createElement('div'); rotor.className='rotor spin'; rotor.appendChild(svg);
+      cubeWrap.appendChild(rotor);
+      const dur=450,start=performance.now(); (function anim(ts){ const t=Math.min(1,(ts-start)/dur); const eased=t*t*(3-2*t); svg.style.transform=`scale(${0.8+0.2*eased})`; svg.style.opacity=String(eased); if(t<1) requestAnimationFrame(anim); })(start);
+    }
+
+    // BUTTON FEEDBACK
+    function burstEffect(btn, color) {
+      const count = 13;
+      for (let i = 0; i < count; ++i) {
+        const frag = document.createElement('div');
+        frag.className = 'fragment' +
+          (color === 'green' ? ' green' : color === 'red' ? ' red' : '');
+        frag.style.setProperty('--frag-x', `${randInt(-210,210)}px`);
+        frag.style.setProperty('--frag-y', `${randInt(-40,60)+(Math.abs(i-count/2))*2}px`);
+        frag.style.setProperty('--frag-rot', `${randInt(-90,120)}deg`);
+        btn.appendChild(frag);
+        setTimeout(() => frag.remove(), 1700);
+      }
+    }
+    function screenFlash(color) {
+      const flash = document.getElementById('geometryFlash');
+      if (!flash) return;
+      flash.classList.remove('flash-green', 'flash-red');
+      void flash.offsetWidth;
+      flash.classList.add(color === 'green' ? 'flash-green' : 'flash-red');
+      setTimeout(() => flash.classList.remove('flash-green', 'flash-red'), 700);
+    }
+    function flashButton(btn, cls) {
+      btn.classList.remove('correct', 'wrong');
+      void btn.offsetWidth;
+      btn.classList.add(cls);
+      setTimeout(() => btn.classList.remove(cls), 900);
+    }
+    function shakeCard(card) {
+      card.classList.add('shake');
+      setTimeout(() => card.classList.remove('shake'), 470);
+    }
+
+    function geometrySubmit(isVoice=false){
+      if (currentAns==null) return;
+      stopGeometryVoice();
+      const raw=ansEl.value.trim(); if(!raw) return;
+      const val=Number(raw); if(!Number.isFinite(val)) return;
+      const elapsed=(performance.now()-startedAt)/1000;
+      let correct = false;
+      if (currentType === 'circle') {
+        correct = val === currentAns;
+      } else {
+        correct = val === currentAns;
+      }
+      // Fix feedback for volume (m³)
+      const unitText = (currentType==='square_vol') ? 'm³' : unitSq(currentUnit);
+      const correctText = currentType==='circle'
+        ? `${currentAns.toLocaleString()}·π ${unitText}`
+        : `${currentAns.toLocaleString()} ${unitText}`;
+
+      // --- Visual FEEDBACK! ---
+      if (correct){
+        flashButton(submitBtn, 'correct');
+        burstEffect(submitBtn, 'green');
+        screenFlash('green');
+      } else {
+        flashButton(submitBtn, 'wrong');
+        shakeCard(geometryCard);
+        burstEffect(submitBtn, 'red');
+        screenFlash('red');
+      }
+
+      if (voiceModeActive) {
+        if (correct) {
+          geometryStreak++; streakEl.textContent=`Streak: ${geometryStreak}`;
+          feedbackEl.style.color='#43e97b';
+          feedbackEl.textContent=`✔ Correct: ${correctText} • ${elapsed.toFixed(1)}s`;
+          speakGeometryFeedback(true, elapsed.toFixed(1), () => {
+            setTimeout(newGeometryQuestion, 350);
+          });
+        } else {
+          feedbackEl.style.color='#ff3333';
+          feedbackEl.textContent=`✘ Incorrect. Correct: ${correctText}`;
+          geometryStreak=0; streakEl.textContent=`Streak: ${geometryStreak}`;
+          speakGeometryFeedback(false, correctText, () => {
+            setTimeout(newGeometryQuestion, 700);
+          });
+        }
+        return;
+      }
+      if (correct){
+        geometryStreak++; streakEl.textContent=`Streak: ${geometryStreak}`;
+        feedbackEl.style.color='#43e97b';
+        feedbackEl.textContent=`✔ Correct: ${correctText} • ${elapsed.toFixed(1)}s`;
+        setTimeout(newGeometryQuestion, 250);
+      } else {
+        feedbackEl.style.color='#ff3333';
+        feedbackEl.textContent=`✘ Incorrect. Correct: ${correctText}`;
+        geometryStreak=0; streakEl.textContent=`Streak: ${geometryStreak}`;
+      }
+    }
+
+    function geometryReveal(){
+      if (proModeEl && proModeEl.checked) return;
+      if(currentAns==null) return;
+      const unitText=(currentType==='square_vol')?'m³':unitSq(currentUnit);
+      const text=currentType==='circle'?`${currentAns.toLocaleString()}·π ${unitText}`:`${currentAns.toLocaleString()} ${unitText}`;
+      feedbackEl.style.color='#ffd166'; feedbackEl.textContent=`Reveal: ${text}`;
+    }
+
+    submitBtn.addEventListener('click', geometrySubmit);
+    ansEl.addEventListener('keydown', e=>{
+      if(voiceModeActive){ if(e.key==='Enter') e.preventDefault(); return;}
+      if(e.key==='Enter') geometrySubmit();
+    });
+    nextBtn.addEventListener('click', newGeometryQuestion);
+    revealBtn.addEventListener('click', geometryReveal);
+    resetBtn.addEventListener('click', ()=>{
+      geometryStreak=0; streakEl.textContent='Streak: 0'; feedbackEl.textContent='';
+      progressEl.style.width='0%'; qEl.textContent='Press “Next” to begin.'; ansEl.value='';
+      areaLabel.textContent='units²'; squareWrap.innerHTML=''; circleWrap.innerHTML=''; cubeWrap.innerHTML='';
+      if(raf) cancelAnimationFrame(raf);
+      stopGeometryVoice();
+    });
+    modeEl.addEventListener('change', newGeometryQuestion);
+    proModeEl && proModeEl.addEventListener('change', newGeometryQuestion);
+
+    voiceModeEl.addEventListener('change', function() {
+      voiceModeActive = !!voiceModeEl.checked && window.speechSynthesis && window.SpeechRecognition;
+      if (voiceModeActive) {
+        ansEl.setAttribute('readonly','readonly');
+        nextBtn.disabled = false;
+        revealBtn.disabled = false;
+        submitBtn.disabled = true;
+        newGeometryQuestion();
+      } else {
+        stopGeometryVoice();
+        ansEl.removeAttribute('readonly');
+        nextBtn.disabled = false;
+        revealBtn.disabled = false;
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.addEventListener('keydown', function(e){
+      if(!document.getElementById('geometryApp')) return;
+      if(voiceModeActive) return;
+      if(document.activeElement === ansEl) return;
+      if(e.key === 'Enter') { geometrySubmit(); e.preventDefault(); }
+      if(e.key === 'n' || e.key === 'N') { newGeometryQuestion(); e.preventDefault(); }
+      if(e.key === 'r' || e.key === 'R') { document.getElementById('geometryReset').click(); e.preventDefault(); }
+      if(e.key === ' ' || e.key === 'Spacebar') { geometryReveal(); e.preventDefault(); }
+    });
+
+    window.addEventListener('DOMContentLoaded', ()=>{ 
+      newGeometryQuestion();
+    });
+  </script>
+  <div class="geometry-flash" id="geometryFlash"></div>     
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Donate | 𝕮𝖆𝖑² Calendar Trainer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      box-sizing: border-box;
+      min-height: 100vh;
+      /* Matrix bg effect: transparent so canvas shows through */
+      background: transparent !important;
+      font-family: 'Orbitron', 'Courier New', Courier, monospace;
+      color: #fff;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      overflow-x: hidden;
+    }
+    /* Matrix Canvas */
+    #matrix-bg {
+      position: fixed;
+      z-index: 0;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity .5s;
+      background: #000;
+    }
+    /* Make sure all main UI is above canvas */
+    .sidebar-nav,
+    .sidebar-toggle,
+    .main-container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .main-container {
+      flex: 1;
+      width: 100vw;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 28px 0 0 0;
+      min-height: 70vh;
+    }
+
+    h1 {
+      margin: 30px 0 10px 0;
+      font-size: 2.1rem;
+      letter-spacing: 2.5px;
+      text-shadow: 0 0 12px #43e97b99, 0 2px 8px #f00a;
+      font-weight: 900;
+      text-align: center;
+      user-select: none;
+    }
+
+    .donate-card {
+      background: linear-gradient(120deg, #181818 85%, #43e97b33 100%);
+      border: 2px solid #43e97b;
+      box-shadow: 0 6px 32px #43e97b33, 0 2px 8px #f00a;
+      border-radius: 22px;
+      margin: 20px auto 0 auto;
+      padding: 36px 28px 30px 28px;
+      max-width: 370px;
+      width: 97vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow .22s;
+    }
+
+    .donate-card:hover {
+      box-shadow: 0 8px 44px #43e97b77, 0 4px 12px #ff333322;
+    }
+
+    .coin-selector {
+      display: flex;
+      justify-content: center;
+      gap: 1.5em;
+      margin-bottom: 25px;
+      margin-top: 5px;
+    }
+
+    .coin-btn {
+      background: #222;
+      border: 3px solid #43e97b;
+      border-radius: 50%;
+      width: 72px; height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 14px #0008, 0 0 2px #43e97b66;
+      cursor: pointer;
+      transition: border-color .19s, transform .17s;
+      outline: none;
+      position: relative;
+    }
+    .coin-btn.selected {
+      border-color: #ff3333;
+      background: linear-gradient(120deg, #43e97b 55%, #ff3333 150%);
+      transform: scale(1.09) rotate(-2deg);
+      box-shadow: 0 2px 22px #ff333388, 0 0 8px #fff2;
+    }
+    .coin-btn:active {
+      transform: scale(0.97);
+    }
+    .coin-label {
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.04em;
+      margin-top: 6px;
+      color: #fff;
+      letter-spacing: 1.2px;
+      text-shadow: 0 0 6px #43e97b66;
+    }
+
+    .address-box {
+      margin-top: 22px;
+      margin-bottom: 8px;
+      background: #161e1a;
+      border: 2px solid #43e97b;
+      border-radius: 12px;
+      padding: 16px 12px;
+      width: 97%;
+      max-width: 340px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.19s, box-shadow .18s;
+      font-size: 1.01em;
+      word-break: break-all;
+      box-shadow: 0 2px 10px #43e97b44;
+      position: relative;
+      letter-spacing: 1.2px;
+    }
+    .address-box.copied {
+      border-color: #ff3333;
+      box-shadow: 0 2px 22px #ff333355, 0 0 8px #fff2;
+    }
+    .copy-btn {
+      background: #43e97b;
+      color: #222;
+      border: none;
+      font-family: inherit;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 4px 18px;
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 1.1em;
+      transition: background .15s, color .15s, transform .11s;
+      box-shadow: 0 2px 8px #0006;
+      outline: none;
+      user-select: none;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+    .copy-btn:active {
+      background: #ff3333;
+      color: #fff;
+      transform: scale(0.97);
+    }
+    .coin-svg {
+      width: 44px;
+      height: 44px;
+      display: block;
+      margin: 0 auto;
+      filter: drop-shadow(0 0 5px #43e97b77);
+      transition: filter .18s;
+    }
+    .coin-btn.selected .coin-svg {
+      filter: drop-shadow(0 0 10px #ff3333cc);
+    }
+    .thankyou {
+      margin-top: 38px;
+      color: #43e97b;
+      font-size: 1.3em;
+      text-align: center;
+      text-shadow: 0 2px 8px #43e97b99, 0 0 3px #fff6;
+      letter-spacing: 1.4px;
+      font-weight: 800;
+      animation: thank-pop 1s cubic-bezier(.11,1.07,.59,.99);
+    }
+    @keyframes thank-pop {
+      0% { opacity: 0; transform: scale(0.88);}
+      70% { opacity: 1; transform: scale(1.05);}
+      100% { opacity: 1; transform: scale(1);}
+    }
+    @media (max-width: 700px) {
+      .donate-card { padding: 20px 4vw 18px 4vw;}
+      h1 {font-size: 1.18rem;}
+      .address-box {font-size: .98em;}
+      .coin-btn {width: 54px;height:54px;}
+      .coin-svg {width: 32px;height:32px;}
+      .main-container {padding: 10px 0;}
+    }
+    /* --- Sidebar --- */
+    .sidebar-nav {
+      position: fixed;
+      top: 70px;
+      left: 20px;
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(17,17,17,0.85);
+      border-radius: 18px;
+      padding: 18px 10px;
+      box-shadow: 0 5px 24px #000b, 0 0 2px #43e97b66;
+      align-items: center;
+      transition: left .18s;
+    }
+    .sidebar-nav button {
+      background: #ff3333;
+      color: #fff;
+      border: 2px solid #222;
+      padding: 0.6rem 1.6rem;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      letter-spacing: 1.1px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 3px 10px #0008;
+      transition: background 0.17s, transform 0.13s;
+      font-weight: bold;
+      outline: none;
+      width: 130px;
+      margin: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+    }
+    .sidebar-nav button:hover, .sidebar-nav button.active {
+      background: #ff6666;
+      transform: scale(1.07);
+    }
+    .sidebar-nav .sidebar-label {
+      font-size: 1.07em;
+      color: #43e97b;
+      margin-bottom: 3px;
+      text-shadow: 0 2px 8px #000a;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      pointer-events: none;
+    }
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      left: 10px;
+      z-index: 999;
+      font-size: 1.6rem;
+      padding: 6px 12px;
+      background: #ff3333;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 0 10px #000a;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .sidebar-toggle { display: block; }
+      .sidebar-nav.collapsed {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav {
+        transition: transform .3s ease, opacity .3s ease;
+      }
+      .sidebar-nav {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav:not(.collapsed) {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+    @media (max-width: 800px) {
+      .sidebar-nav { left: 3px; padding: 9px 4px; }
+      .sidebar-nav button { width: 98px; font-size: 1em; padding: 0.48rem 0.6rem; }
+    }
+    @media (max-width: 600px) {
+      .sidebar-nav {
+        flex-direction: row;
+        bottom: 0;
+        left: 0;
+        top: unset;
+        width: 100vw;
+        justify-content: center;
+        background: rgba(17,17,17,0.92);
+        border-radius: 0;
+        box-shadow: 0 -3px 18px #000b, 0 0 2px #43e97b66;
+        padding: 8px 0 10px 0;
+      }
+      .sidebar-nav .sidebar-label { display: none; }
+      .sidebar-nav button {
+        width: 33vw;
+        min-width: 90px;
+        max-width: 160px;
+        font-size: 1.07em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Matrix background canvas -->
+  <canvas id="matrix-bg"></canvas>
+  <!-- Sidebar Toggle -->
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar-nav collapsed" aria-label="Quick external links">
+    <span class="sidebar-label">Links</span>
+    <button onclick="window.location.href='Multiplication.html'" title="Multi">✖️ Multi</button>
+    <button onclick="window.location.href='Exponential.html'" title="Expo">🔢 Expo</button>
+    <button onclick="window.location.href='index.html'" title="Cal">📅 Cal</button>
+    <button onclick="window.location.href='Division.html'" title="Div">➗ Div</button>
+    <button onclick="window.location.href='https://shop.thenoeticexperience.com/'" title="Book">📖 Book</button>
+  </nav>
+
+  <div class="main-container">
+    <h1>🪙 Donate to <span style="color:#43e97b;">𝕮𝖆𝖑²</span></h1>
+    <div class="donate-card">
+      <div style="font-size:1.11em;text-align:center;margin-bottom:18px;">
+        If you enjoy 𝕮𝖆𝖑², please consider supporting the project!
+        <br>
+        <span style="font-size:0.97em;color:#baffd1;">
+          Choose your favorite coin below.
+        </span>
+      </div>
+      <div class="coin-selector" id="coinSelector">
+        <button class="coin-btn selected" data-coin="BTC" tabindex="0" aria-label="Bitcoin">
+          <span class="coin-svg">
+            <!-- BTC SVG -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+              <circle cx="25" cy="25" r="24" fill="#f7931a" stroke="#fff" stroke-width="2"/>
+              <text x="25" y="32" text-anchor="middle" font-size="28" font-weight="bold" fill="#fff" font-family="monospace">₿</text>
+            </svg>
+          </span>
+        </button>
+        <button class="coin-btn" data-coin="ETH" tabindex="0" aria-label="Ethereum">
+          <span class="coin-svg">
+            <!-- ETH SVG -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+              <circle cx="25" cy="25" r="24" fill="#3c3c3d" stroke="#fff" stroke-width="2"/>
+              <polygon points="25,10 34,27 25,32 16,27" fill="#8c8c8e"/>
+              <polygon points="25,35 34,29 25,32 16,29" fill="#343434"/>
+            </svg>
+          </span>
+        </button>
+        <button class="coin-btn" data-coin="LTC" tabindex="0" aria-label="Litecoin">
+          <span class="coin-svg">
+            <!-- LTC SVG -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+              <circle cx="25" cy="25" r="24" fill="#b8b8b8" stroke="#fff" stroke-width="2"/>
+              <text x="25" y="33" text-anchor="middle" font-size="32" font-weight="bold" fill="#fff" font-family="monospace">Ł</text>
+            </svg>
+          </span>
+        </button>
+      </div>
+      <div class="coin-label" id="coinLabel">Bitcoin</div>
+      <div class="address-box" id="addressBox">
+        <span id="coinAddress" style="font-family:'Courier New',monospace;font-size:0.98em;">
+          bc1qh70avhn968svahgzv22ddnckn5v5v5dnwuvf4g
+        </span>
+        <button class="copy-btn" id="copyBtn">Copy</button>
+      </div>
+
+      <div id="thankYou" style="display:none;" class="thankyou">✔️ Copied!</div>
+    </div>
+  </div>
+
+  <script>
+
+
+    // --- Sidebar toggle ---
+    function toggleSidebar() {
+      document.querySelector('.sidebar-nav').classList.toggle('collapsed');
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      if(window.innerWidth <= 600) {
+        document.querySelector('.sidebar-nav').classList.add('collapsed');
+      } else {
+        document.querySelector('.sidebar-nav').classList.remove('collapsed');
+      }
+    });
+    window.addEventListener('resize', function() {
+      if(window.innerWidth <= 600) {
+        document.querySelector('.sidebar-nav').classList.add('collapsed');
+      } else {
+        document.querySelector('.sidebar-nav').classList.remove('collapsed');
+      }
+    });
+
+    // --- Coin selection ---
+    const COINS = {
+      BTC: {
+        label: "Bitcoin",
+        address: "bc1qh70avhn968svahgzv22ddnckn5v5v5dnwuvf4g"
+      },
+      ETH: {
+        label: "Ethereum",
+        address: "0x414Fc77B95d5575FF7F0E07C1464665A2FF5cE02"
+      },
+      LTC: {
+        label: "Litecoin",
+        address: "ltc1qlydnpeqyrhk6cutxtu4zwwdrpxwdvwh7l007z2"
+      }
+    };
+    let selectedCoin = "BTC";
+    const coinSelector = document.getElementById('coinSelector');
+    const coinLabel = document.getElementById('coinLabel');
+    const coinAddress = document.getElementById('coinAddress');
+    const addressBox = document.getElementById('addressBox');
+    const copyBtn = document.getElementById('copyBtn');
+    const thankYou = document.getElementById('thankYou');
+
+    coinSelector.addEventListener('click', function(e) {
+      const btn = e.target.closest('.coin-btn');
+      if(!btn) return;
+      document.querySelectorAll('.coin-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedCoin = btn.getAttribute('data-coin');
+      updateCoin();
+    });
+    // Also allow keyboard selection for accessibility:
+    coinSelector.querySelectorAll('.coin-btn').forEach(btn=>{
+      btn.addEventListener('keydown', function(e){
+        if(e.key==='Enter' || e.key===' ') {
+          btn.click();
+        }
+      });
+    });
+
+    function updateCoin() {
+      coinLabel.textContent = COINS[selectedCoin].label;
+      coinAddress.textContent = COINS[selectedCoin].address;
+      addressBox.classList.remove('copied');
+      thankYou.style.display = 'none';
+    }
+    updateCoin();
+
+    // --- Copy to clipboard ---
+    copyBtn.addEventListener('click', function() {
+      navigator.clipboard.writeText(COINS[selectedCoin].address).then(()=>{
+        addressBox.classList.add('copied');
+        thankYou.style.display = 'block';
+        setTimeout(()=>{
+          addressBox.classList.remove('copied');
+          thankYou.style.display = 'none';
+        }, 1300);
+      });
+    });
+  </script>
+</body>
+</html>

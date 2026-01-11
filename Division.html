@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>𝕮𝖆𝖑² Division Trainer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      box-sizing: border-box;
+      min-height: 100vh;
+      background: transparent !important;
+      font-family: 'Orbitron', 'Courier New', Courier, monospace;
+      color: #fff;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      overflow-x: hidden;
+    }
+    #matrix-bg {
+      position: fixed;
+      z-index: 0;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity .5s;
+      background: #000;
+    }
+    .sidebar-nav,
+    .sidebar-toggle,
+    .hud,
+    .main-container {
+      position: relative;
+      z-index: 1;
+    }
+    .hud {
+      width: 100vw;
+      max-width: 100vw;
+      background: linear-gradient(90deg, #111 30%, #222 80%);
+      box-shadow: 0 4px 20px #000a, 0 0 2px #0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      font-size: 1.1rem;
+      padding: 10px 0 8px 0;
+      letter-spacing: 1.5px;
+      user-select: none;
+      gap: 7px;
+      flex-wrap: wrap;
+      flex-direction: row;
+      z-index: 20;
+    }
+    @media (max-width: 700px) {
+      .hud > * { margin: 2px auto; }
+      .hud .timer { margin: 0 auto; }
+      .hud .pause-btn, .hud .music-btn { font-size: 1.3em; }
+    }
+    .hud .doomguy { font-size: 2.2rem; filter: drop-shadow(0 0 10px #f00a); margin-right: 6px; }
+    .hud .streak { font-weight: bold; color: #43e97b; font-size: 1.3em; margin-left: 8px; }
+    .hud .timer {
+      color: #fff;
+      background: #252525;
+      border-radius: 7px;
+      box-shadow: 0 0 7px #f00a;
+      padding: 4px 18px;
+      font-size: 1.3em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 7px;
+    }
+    .hud .pause-btn, .hud .music-btn {
+      background: none;
+      border: none;
+      color: #43e97b;
+      font-size: 1.5em;
+      margin-left: 7px;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .hud .pause-btn:hover, .hud .music-btn:hover {
+      color: #fff;
+      transform: scale(1.1);
+    }
+    .hud .century-select {
+      background: #43e97b;
+      color: #222;
+      border-radius: 9px;
+      border: none;
+      padding: 4px 8px;
+      margin-left: 5px;
+      font-size: 1em;
+      font-family: inherit;
+      font-weight: bold;
+      outline: none;
+      box-shadow: 0 2px 8px #0006;
+      cursor: pointer;
+    }
+    .main-container {
+      flex: 1;
+      width: 100vw;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 28px 0 0 0;
+      box-sizing: border-box;
+    }
+    h1 {
+      margin: 0 0 20px 0;
+      font-size: 2.1rem;
+      letter-spacing: 2.5px;
+      text-shadow: 0 0 12px #43e97b99, 0 2px 8px #f00a;
+      font-weight: 900;
+      text-align: center;
+      user-select: none;
+    }
+    #questionDisplay {
+      font-size: 1.6rem;
+      background: #222;
+      color: #43e97b;
+      border: 2.5px solid #ff3333;
+      border-radius: 18px;
+      box-shadow: 0 0 20px #ff333355, 0 0 2px #fff;
+      padding: 20px 34px;
+      margin: 18px 0 24px 0;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 2px;
+      user-select: none;
+      transition: background 0.25s;
+    }
+    .btn-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-container button {
+      position: relative;
+      background: radial-gradient(circle at 60% 40%, #43e97b 70%, #3bc36b 100%);
+      border: 4px solid #ff3333;
+      color: #222;
+      border-radius: 20%;
+      width: 120px;
+      height: 92px;
+      font-size: 1.1rem;
+      font-family: inherit;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      margin: 13px 7px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px #0009, 0 0 1px #fff;
+      outline: none;
+      transition: background 0.14s, box-shadow 0.16s, transform 0.13s;
+      z-index: 3;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .btn-container button .fragments, .btn-container button .emoji-burst {
+      pointer-events: none;
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      z-index: 11;
+    }
+    .emoji-burst {
+      pointer-events: none;
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      z-index: 12;
+      overflow: visible;
+    }
+    .emoji-burst-emoji {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      font-size: 2em;
+      pointer-events: none;
+      opacity: 0.95;
+      animation: emoji-burst-pop 1.1s cubic-bezier(.6,1.6,.4,1) forwards;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 1px 8px #fff8);
+      user-select: none;
+    }
+    @keyframes emoji-burst-pop {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.7) rotate(0deg);
+      }
+      70% {
+        opacity: 1;
+        transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(1.18) rotate(var(--burst-rot, 0deg));
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--burst-x, 0px), var(--burst-y, 0px)) scale(0.95) rotate(var(--burst-rot, 0deg));
+      }
+    }
+    .fragment {
+      position: absolute;
+      bottom: 45%;
+      left: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #ff3333 60%, #222 100%);
+      opacity: 0.96;
+      pointer-events: none;
+      z-index: 12;
+      transform: translate(-50%,0) scale(1.45) rotate(0deg);
+      animation: fragment-fall 1.2s cubic-bezier(.61,1.7,.43,.99) forwards;
+      box-shadow: 0 0 12px #fff8, 0 0 3px #43e97b88;
+    }
+    .fragment.green {
+      background: linear-gradient(135deg, #43e97b 55%, #3bc36b 100%);
+      box-shadow: 0 0 15px #43e97bb7, 0 0 1px #fff;
+      opacity: 0.98;
+    }
+    @keyframes fragment-fall {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1.45) rotate(0deg);
+      }
+      70% {
+        opacity: 1;
+      }
+      85% {
+        opacity: 0.9;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(
+            calc(-50% + var(--frag-x, 0px)),
+            calc(250px + var(--frag-y, 0px))
+          )
+          scale(0.85)
+          rotate(var(--frag-rot, 20deg));
+      }
+    }
+    .btn-container button:hover {
+      background: #80ffb4;
+      transform: scale(1.10);
+      box-shadow: 0 6px 22px #43e97baa, 0 0 4px #fff;
+    }
+    .btn-container button.clicked {
+      background: #f00;
+      color: #fff;
+      animation: recoil 0.18s cubic-bezier(.78,-0.07,0,1.43);
+    }
+    @keyframes recoil {
+      0% {transform: scale(1);}
+      40% {transform: scale(0.95);}
+      100% {transform: scale(1);}
+    }
+    .btn-container button.correct {
+      background: linear-gradient(145deg,#43e97b 70%, #3bc36b 120%);
+      color: #fff;
+      border: 4px solid #ffda00;
+      box-shadow: 0 0 15px #43e97baa, 0 0 4px #fff;
+      animation: wrongshake 0.19s;
+    }
+    .btn-container button.wrong {
+      background: #f00 !important;
+      border: 4px solid #900;
+      color: #fff;
+      animation: wrongshake 0.19s;
+    }
+    @keyframes wrongshake {
+      0%,100%{transform:translate(0,0);}
+      30%{transform:translate(-8px,2px);}
+      60%{transform:translate(6px,-4px);}
+    }
+    #strikeDisplay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(44,0,0,0.94);
+      color: #fff;
+      font-size: 2.2rem;
+      font-weight: bold;
+      padding: 28px 38px;
+      border-radius: 24px;
+      box-shadow: 0 4px 40px #f003, 0 0 5px #fff;
+      margin-top: 34px;
+      text-shadow: 0 0 10px #f00a, 0 0 3px #fff;
+      border: 3px solid #ff3333;
+      z-index: 4;
+      position: relative;
+      transition: opacity .25s;
+    }
+    #strikeDisplay.hidden { display: none; }
+    .main-container .start-btn-wrapper {
+      display: flex;
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 12px;
+      margin-top: -6px;
+    }
+    .main-container .start-btn {
+      background: linear-gradient(90deg, #43e97b 70%, #3bc36b 120%);
+      border: 4px solid #ff3333;
+      color: #222;
+      font-size: 1.3rem;
+      font-family: inherit;
+      font-weight: 900;
+      letter-spacing: 2px;
+      border-radius: 18px;
+      padding: 1.1em 2.2em;
+      box-shadow: 0 4px 14px #000a, 0 0 2px #fff;
+      cursor: pointer;
+      outline: none;
+      margin-bottom: 0;
+      text-shadow: 0 1px 0 #fff8;
+      transition: background 0.15s, transform 0.13s, color 0.15s;
+      z-index: 10;
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      min-width: 180px;
+    }
+    .main-container .start-btn:hover,
+    .main-container .start-btn:focus {
+      background: #80ffb4;
+      color: #111;
+      transform: scale(1.08);
+      box-shadow: 0 8px 25px #43e97baa, 0 0 5px #fff;
+    }
+    @media (max-width: 600px) {
+      .main-container .start-btn {
+        font-size: 1.13rem;
+        padding: 1em 1.2em;
+        min-width: 126px;
+        border-radius: 14px;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 8px #fff8, 0 0 2px #222;
+      }
+      .main-container { padding: 10px 0; }
+      h1 {font-size: 1.1rem;}
+      #questionDisplay {font-size: 1.1rem; padding: 12px 8px;}
+      #strikeDisplay {font-size: 1.1rem; padding: 13px 10px;}
+      .btn-container button {
+        padding: 0.8rem 2.4rem;
+        font-size: 1.1rem;
+        width: 140px;
+        height: 50px;
+      }
+      .hud .doomguy {font-size: 1.1rem;}
+    }
+    .sidebar-nav {
+      position: fixed;
+      top: 70px;
+      left: 20px;
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(17,17,17,0.85);
+      border-radius: 18px;
+      padding: 18px 10px;
+      box-shadow: 0 5px 24px #000b, 0 0 2px #43e97b66;
+      align-items: center;
+      transition: left .18s;
+    }
+    .sidebar-nav button {
+      background: #ff3333;
+      color: #fff;
+      border: 2px solid #222;
+      padding: 0.6rem 1.6rem;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      letter-spacing: 1.1px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 3px 10px #0008;
+      transition: background 0.17s, transform 0.13s;
+      font-weight: bold;
+      outline: none;
+      width: 130px;
+      margin: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+    }
+    .sidebar-nav button:hover {
+      background: #ff6666;
+      transform: scale(1.07);
+    }
+    .sidebar-nav .sidebar-label {
+      font-size: 1.07em;
+      color: #43e97b;
+      margin-bottom: 3px;
+      text-shadow: 0 2px 8px #000a;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      pointer-events: none;
+    }
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      left: 10px;
+      z-index: 999;
+      font-size: 1.6rem;
+      padding: 6px 12px;
+      background: #ff3333;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 0 10px #000a;
+      cursor: pointer;
+    }
+    @media (max-width: 800px) {
+      .sidebar-nav { left: 3px; padding: 9px 4px; }
+      .sidebar-nav button { width: 98px; font-size: 1em; padding: 0.48rem 0.6rem; }
+    }
+    @media (max-width: 600px) {
+      .sidebar-toggle { display: block; }
+      .sidebar-nav.collapsed {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav {
+        flex-direction: row;
+        bottom: 0;
+        left: 0;
+        top: unset;
+        width: 100vw;
+        justify-content: center;
+        background: rgba(17,17,17,0.92);
+        border-radius: 0;
+        box-shadow: 0 -3px 18px #000b, 0 0 2px #43e97b66;
+        padding: 8px 0 10px 0;
+        transition: transform .3s ease, opacity .3s ease;
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-nav:not(.collapsed) {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .sidebar-nav .sidebar-label { display: none; }
+      .sidebar-nav button {
+        width: 33vw;
+        min-width: 90px;
+        max-width: 160px;
+        font-size: 1.07em;
+      }
+      .sidebar-toggle {
+        top: 120px !important;
+        bottom: unset !important;
+        left: 10px !important;
+        right: unset !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-bg"></canvas>
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <nav class="sidebar-nav collapsed" aria-label="Quick external links">
+    <span class="sidebar-label">Links</span>
+    <button onclick="window.location.href='Multiplication.html'" title="Multiplication">✖️ Multi</button>
+    <button onclick="window.location.href='index.html'" title="Calendar">📅 Cal</button>
+    <button onclick="window.location.href='https://shop.thenoeticexperience.com/'" title="Book">📖 Book</button>
+    <button onclick="window.location.href='Exponential.html'" title="Exponential">🔢 Expo</button>
+    <button onclick="window.location.href='Donation.html'" class="active" title="Donate">🪙 Donate</button>
+  </nav>
+  <div class="hud">
+    <span class="doomguy" id="doomguy-face">😀</span>
+    <span id="streakDisplay" class="streak">🔥 0</span>
+    <span class="timer" id="timerDisplay">⏱️ 0:30</span>
+    <button class="pause-btn" id="hudPauseBtn" onclick="togglePause()" aria-label="Pause or resume timer">⏸</button>
+    <button class="music-btn" id="musicPauseBtn" onclick="toggleMusic()" aria-label="Pause or play music">🎵⏸</button>
+    <select id="musicSelect" class="century-select" aria-label="Choose background music">
+      <option value="doom">DOOM</option>
+      <option value="lofi">Beethoven</option>
+      <option value="cyberpunk">Nitro</option>
+      <option value="relax">Relax</option>
+      <option value="think">Think</option>
+    </select>
+    <select id="digitsSelect" class="century-select" aria-label="Choose digits">
+      <option value="2d1">2 digits ÷ 1 digit</option>
+      <option value="3d1">3 digits ÷ 1 digit</option>
+    </select>
+  </div>
+  <div class="main-container">
+    <h1>➗ 𝕮𝖆𝖑² Division Trainer</h1>
+    <div class="start-btn-wrapper">
+      <button class="start-btn" onclick="startGame()">▶️ Start Game</button>
+    </div>
+    <div id="questionDisplay">Press Start Game!</div>
+    <div class="btn-container" id="answerButtons"></div>
+    <div id="levelDisplay"></div>
+    <div id="levelUpCounter"></div>
+    <div id="strikeDisplay" class="hidden">❌<br>Game Over</div>
+  </div>
+  <!-- Audio Elements -->
+  <audio id="correctSound" src="https://www.myinstants.com/media/sounds/correct-pinpon.mp3"></audio>
+  <audio id="wrongSound" src="https://www.myinstants.com/media/sounds/answer-wrong.mp3"></audio>
+  <audio id="levelUpSound" src="https://www.myinstants.com/media/sounds/crowdhomerunapplause.wav"></audio>
+  <audio id="gameOverSound" src="https://www.myinstants.com/media/sounds/ocarina-of-time-73-game-over.mp3"></audio>
+  <audio id="doomMusic" src="https://www.myinstants.com/media/sounds/doom-ost-e1m1-at-dooms-gatedodoc.mp3" loop></audio>
+  <audio id="lofiMusic" src="assets/bet1.mp3" loop></audio>
+  <audio id="cyberpunkMusic" src="assets/nitro.mp3" loop></audio>
+  <audio id="relaxMusic" src="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3" loop></audio>
+  <audio id="thinkMusic" src="https://www.bensound.com/bensound-music/bensound-scifi.mp3" loop></audio>
+
+  <script>
+    // === MUSIC STATE ===
+    const musicTracks = {
+      doom: document.getElementById('doomMusic'),
+      lofi: document.getElementById('lofiMusic'),
+      cyberpunk: document.getElementById('cyberpunkMusic'),
+      relax: document.getElementById('relaxMusic'),
+      think: document.getElementById('thinkMusic'),
+    };
+    let currentMusic = 'doom';
+    const musicPauseBtn = document.getElementById('musicPauseBtn');
+    const musicSelect = document.getElementById('musicSelect');
+    function playMusic(track) {
+      Object.values(musicTracks).forEach(m => { m.pause(); m.currentTime = 0; });
+      musicTracks[track].play();
+      musicPauseBtn.innerHTML = '🎵⏸';
+      musicPauseBtn.setAttribute('aria-label', 'Pause music');
+    }
+    function pauseMusic(track) {
+      musicTracks[track].pause();
+      musicPauseBtn.innerHTML = '🎵▶️';
+      musicPauseBtn.setAttribute('aria-label', 'Play music');
+    }
+    function isMusicPaused(track) { return musicTracks[track].paused; }
+    function toggleMusic() {
+      if (isMusicPaused(currentMusic)) {
+        musicTracks[currentMusic].play();
+        musicPauseBtn.innerHTML = '🎵⏸';
+        musicPauseBtn.setAttribute('aria-label', 'Pause music');
+      } else {
+        musicTracks[currentMusic].pause();
+        musicPauseBtn.innerHTML = '🎵▶️';
+        musicPauseBtn.setAttribute('aria-label', 'Play music');
+      }
+    }
+    musicSelect.addEventListener('change', function () {
+      currentMusic = this.value;
+      playMusic(currentMusic);
+    });
+
+    // SIDEBAR INIT LOGIC
+    function toggleSidebar() {
+      document.querySelector('.sidebar-nav').classList.toggle('collapsed');
+    }
+    function setSidebarInitialState() {
+      if(window.innerWidth <= 600) {
+        document.querySelector('.sidebar-nav').classList.add('collapsed');
+      } else {
+        document.querySelector('.sidebar-nav').classList.remove('collapsed');
+      }
+    }
+    window.addEventListener('resize', setSidebarInitialState);
+    document.addEventListener('DOMContentLoaded', function() {
+      Object.values(musicTracks).forEach(m => { m.pause(); m.currentTime = 0; });
+      musicPauseBtn.innerHTML = '🎵▶️';
+      musicPauseBtn.setAttribute('aria-label', 'Play music');
+      setSidebarInitialState();
+    });
+    window.addEventListener('beforeunload', () => { Object.values(musicTracks).forEach(m => m.pause()); });
+
+    // === DOOMGUY FACES ===
+    const doomGuyFaces = ["😀", "😐", "😬", "😵"];
+    let timeLeft = 30; // <-- set to 30
+    function updateDoomguyFace() {
+      let idx = 0;
+      if (isGameOver) idx = 3;
+      else if (timeLeft < 12) idx = 2;
+      else if (timeLeft < 20) idx = 1;
+      else idx = 0;
+      document.getElementById('doomguy-face').textContent = doomGuyFaces[idx];
+    }
+
+    // === SCREEN SHAKE ===
+    function triggerScreenShake() {
+      document.body.classList.remove('shake');
+      void document.body.offsetWidth;
+      document.body.classList.add('shake');
+      setTimeout(() => document.body.classList.remove('shake'), 300);
+    }
+
+    function showIncorrectOverlay() {
+      let overlay = document.createElement('div');
+      overlay.textContent = '❌ Incorrect!';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '50%';
+      overlay.style.left = '50%';
+      overlay.style.transform = 'translate(-50%,-50%) scale(1)';
+      overlay.style.background = 'rgba(230, 40, 40, 0.97)';
+      overlay.style.color = '#fff';
+      overlay.style.fontSize = '2.3em';
+      overlay.style.fontWeight = 'bold';
+      overlay.style.padding = '30px 44px';
+      overlay.style.borderRadius = '22px';
+      overlay.style.boxShadow = '0 0 30px #ff3333aa, 0 0 8px #fff';
+      overlay.style.zIndex = 9999;
+      overlay.style.textAlign = 'center';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.opacity = 1;
+      overlay.style.transition = 'opacity 0.7s';
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.style.opacity = 0, 500);
+      setTimeout(() => { if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 1300);
+    }
+
+    // --- CORRECT OVERLAY ---
+    function showCorrectOverlay() {
+      let overlay = document.createElement('div');
+      overlay.textContent = '✅ Correct!';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '50%';
+      overlay.style.left = '50%';
+      overlay.style.transform = 'translate(-50%,-50%) scale(1)';
+      overlay.style.background = 'rgba(40,210,90,0.97)';
+      overlay.style.color = '#fff';
+      overlay.style.fontSize = '2.3em';
+      overlay.style.fontWeight = 'bold';
+      overlay.style.padding = '30px 44px';
+      overlay.style.borderRadius = '22px';
+      overlay.style.boxShadow = '0 0 30px #43e97baa, 0 0 8px #fff';
+      overlay.style.zIndex = 9999;
+      overlay.style.textAlign = 'center';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.opacity = 1;
+      overlay.style.transition = 'opacity 0.7s';
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.style.opacity = 0, 500);
+      setTimeout(() => { if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 1300);
+    }
+
+    // --- GAME LOGIC ---
+    let streak = 0;
+    let isPaused = false;
+    let isGameOver = false;
+    let timerInterval;
+    let answered = 0;
+    let currentCorrect = null;
+    let currentDividend = null;
+    let currentDivisor = null;
+    let totalQuestions = 15;
+
+    function roundN(x, n) {
+      return Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
+    }
+
+    function startGame() {
+      streak = 0;
+      isGameOver = false;
+      timeLeft = 30;
+      answered = 0;
+      document.getElementById('strikeDisplay').classList.add('hidden');
+      document.getElementById('levelDisplay').textContent = "";
+      document.getElementById('levelUpCounter').textContent = "";
+      updateStreak();
+      nextQuestion();
+      startTimer(true);
+      updateDoomguyFace();
+      isPaused = false;
+      document.getElementById('hudPauseBtn').textContent = '⏸';
+    }
+
+    function togglePause() {
+      if (!isGameOver) {
+        isPaused = !isPaused;
+        document.getElementById('hudPauseBtn').textContent = isPaused ? '▶️' : '⏸';
+        if (!isPaused) {
+          startTimer(false);
+        } else {
+          clearInterval(timerInterval);
+        }
+      }
+    }
+
+    function updateStreak() {
+      document.getElementById('streakDisplay').textContent = `🔥 ${streak}`;
+    }
+
+    function startTimer(reset) {
+      clearInterval(timerInterval);
+      if (reset) timeLeft = 30;
+      document.getElementById('timerDisplay').textContent = `⏱️ ${formatTime(timeLeft)}`;
+      timerInterval = setInterval(() => {
+        if (!isPaused && !isGameOver) {
+          timeLeft--;
+          document.getElementById('timerDisplay').textContent = `⏱️ ${formatTime(timeLeft)}`;
+          updateDoomguyFace();
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            playSound('gameOverSound');
+            document.getElementById('strikeDisplay').classList.remove('hidden');
+            isGameOver = true;
+            updateDoomguyFace();
+          }
+        }
+      }, 1000);
+    }
+
+    function nextQuestion() {
+      if (isGameOver) return;
+      if (answered >= totalQuestions) {
+        document.getElementById('questionDisplay').textContent = '🎉 ¡Completaste todas las preguntas!';
+        isGameOver = true;
+        document.getElementById('strikeDisplay').classList.remove('hidden');
+        playSound('levelUpSound');
+        triggerScreenShake();
+        return;
+      }
+      const digitsMode = document.getElementById('digitsSelect').value;
+      let divisor, dividend, quotient, dividendMin, dividendMax, divisorMin, divisorMax;
+
+      if (digitsMode === "2d1") {
+        dividendMin = 10; dividendMax = 99;
+        divisorMin = 2; divisorMax = 9;
+      } else { // "3d1"
+        dividendMin = 100; dividendMax = 999;
+        divisorMin = 2; divisorMax = 9;
+      }
+
+      // Generate division question with decimal (not integer)
+      let found = false;
+      let attempts = 0;
+      while (!found && attempts < 2000) {
+        divisor = randomInt(divisorMin, divisorMax);
+        dividend = randomInt(dividendMin, dividendMax);
+        quotient = dividend / divisor;
+        if (divisor !== 0 && Math.abs(quotient - Math.round(quotient)) > 0.0009 && quotient > 1 && quotient < 100) {
+          found = true;
+        }
+        attempts++;
+      }
+      quotient = dividend / divisor;
+      let correctAnswer = roundN(quotient, 3);
+
+      currentDividend = dividend;
+      currentDivisor = divisor;
+      currentCorrect = correctAnswer;
+
+      // Generate distractors
+      let answers = [correctAnswer];
+      let distractors = [
+        roundN(correctAnswer + 0.001, 3),
+        roundN(correctAnswer - 0.001, 3),
+        roundN(correctAnswer + 0.002, 3),
+        roundN(correctAnswer - 0.002, 3),
+        roundN(correctAnswer + 0.005, 3),
+        roundN(correctAnswer - 0.005, 3),
+        roundN(correctAnswer + 0.01, 3),
+        roundN(correctAnswer - 0.01, 3),
+        roundN(correctAnswer + 0.02, 3),
+        roundN(correctAnswer - 0.02, 3),
+        roundN(correctAnswer + 0.05, 3),
+        roundN(correctAnswer - 0.05, 3),
+        roundN(correctAnswer + 0.1, 3),
+        roundN(correctAnswer - 0.1, 3),
+        roundN(correctAnswer + 1.0, 3),
+        roundN(correctAnswer - 1.0, 3)
+      ];
+      distractors = distractors.filter(x =>
+        x > 0 &&
+        x !== correctAnswer &&
+        !answers.includes(x) &&
+        x < 100
+      );
+      distractors = shuffleArr(distractors).slice(0, 3);
+      answers = shuffleArr([correctAnswer, ...distractors]);
+
+      document.getElementById('questionDisplay').textContent = `${dividend} ÷ ${divisor}? `;
+      document.getElementById('levelDisplay').textContent = `Questions: ${answered + 1} / ${totalQuestions}`;
+      document.getElementById('levelUpCounter').textContent = "";
+      const container = document.getElementById('answerButtons');
+      container.innerHTML = '';
+      answers.forEach(ans => {
+        const btn = document.createElement('button');
+        btn.textContent = ans.toFixed(3);
+
+        btn.onclick = () => {
+          if (isGameOver || isPaused) return;
+          // Disable all buttons after answering
+          const allBtns = document.querySelectorAll('#answerButtons button');
+          allBtns.forEach(b => b.disabled = true);
+
+          if (ans === correctAnswer) {
+            btn.classList.add('correct');
+            playSound('correctSound');
+            streak++;
+            answered++;
+            showCorrectOverlay();
+            updateStreak();
+            setTimeout(() => {
+              nextQuestion();
+              startTimer(true);
+            }, 700);
+          } else {
+            btn.classList.add('wrong');
+            showIncorrectOverlay(); // <-- add this line
+            playSound('wrongSound');
+            triggerScreenShake();
+            clearInterval(timerInterval);
+            isGameOver = true;
+            document.getElementById('strikeDisplay').classList.remove('hidden');
+            updateDoomguyFace();
+            setTimeout(() => {
+              playSound('gameOverSound');
+            }, 300);
+          }
+          btn.classList.add('clicked');
+          updateDoomguyFace();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function playSound(id) {
+      const sound = document.getElementById(id);
+      if (sound) { sound.currentTime = 0; sound.play(); }
+    }
+    function shuffleArr(arr) {
+      arr = arr.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function randomInt(a, b) {
+      return a + Math.floor(Math.random() * (b - a + 1));
+    }
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+  </script>
+</body>
+</html>
