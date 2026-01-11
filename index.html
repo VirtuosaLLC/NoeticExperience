@@ -78,7 +78,7 @@
       gap: 6px;
       margin: 0 7px;
     }
-    .hud .pause-btn, .hud .music-btn {
+    .hud .pause-btn {
       background: none;
       border: none;
       color: #43e97b;
@@ -87,7 +87,7 @@
       cursor: pointer;
       transition: color 0.2s, transform 0.2s;
     }
-    .hud .pause-btn:hover, .hud .music-btn:hover {
+    .hud .pause-btn:hover {
       color: #fff;
       transform: scale(1.1);
     }
@@ -681,15 +681,7 @@
     <span id="streakDisplay" class="streak">🔥 0</span>
     <span class="timer" id="timerDisplay">⏱️ 1:00</span>
     <button class="pause-btn" id="hudPauseBtn" onclick="togglePause()" aria-label="Pause or resume timer">⏸</button>
-    <button class="music-btn" id="musicPauseBtn" onclick="toggleMusic()" aria-label="Pause or play music">🎵⏸</button>
-    <select id="musicSelect" class="century-select" aria-label="Choose background music">
-      <option value="doom">DOOM</option>
-      <option value="lofi">Beethoven</option>
-      <option value="cyberpunk">Nitro</option>
-      <option value="relax">Relax</option>
-      <option value="think">Think</option>
-    </select>
-    <select id="centurySelect" class="century-select" aria-label="Choose century">
+<select id="centurySelect" class="century-select" aria-label="Choose century">
       <option value="1600">1600s</option>
       <option value="1700">1700s</option>
       <option value="1800">1800s</option>
@@ -728,10 +720,14 @@
     </select>
     <select id="factCategorySelect" class="century-select" aria-label="Choose historic fun fact category" title="Historic Fun Fact Category">
       <option value="lists" selected>Facts: Lists</option>
-      <option value="sports">Facts: Sports</option>
+      <option value="sports">Facts: Soccer</option>
       <option value="horror">Facts: Horror</option>
       <option value="war">Facts: War</option>
-    </select>
+      <option value="usa">Facts: USA</option>
+      <option value="elsalvador">Facts: El Salvador</option>
+      <option value="mexico">Facts: Mexico</option>
+      <option value="japan">Facts: Japan</option>
+</select>
   </div>
 
   <div class="main-container">
@@ -766,12 +762,7 @@
 
   <!-- Audio Elements -->
   <audio id="gunshotSound" src="https://www.myinstants.com/media/sounds/m4a1_single-kibblesbob-8540445_VMWH3fM.mp3"></audio>
-  <audio id="doomMusic" src="https://www.myinstants.com/media/sounds/doom-ost-e1m1-at-dooms-gatedodoc.mp3" loop></audio>
-  <audio id="lofiMusic" src="assets/bet1.mp3" loop></audio>
-  <audio id="cyberpunkMusic" src="assets/nitro.mp3" loop></audio>
-  <audio id="relaxMusic" src="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3" loop></audio>
-  <audio id="thinkMusic" src="https://www.bensound.com/bensound-music/bensound-scifi.mp3" loop></audio>
-  <audio id="correctSound" src="https://www.myinstants.com/media/sounds/correct-pinpon.mp3"></audio>
+<audio id="correctSound" src="https://www.myinstants.com/media/sounds/correct-pinpon.mp3"></audio>
   <audio id="wrongSound" src="https://www.myinstants.com/media/sounds/answer-wrong.mp3"></audio>
 
   <script>
@@ -789,22 +780,227 @@
     // --- HISTORIC MODE ---
     let historicMode = false;
     let availableHistoricDates = [];
+// --- HISTORIC MODE PERFORMANCE (cache + pool) ---
+const historicDayCache = new Map(); // key "m-d" -> events[]
+const wikiImageCache = new Map();   // key pageTitleLower -> imgURL|null
 
-    // --- MUSIC STATE ---
-    const musicTracks = {
-      doom: document.getElementById('doomMusic'),
-      lofi: document.getElementById('lofiMusic'),
-      cyberpunk: document.getElementById('cyberpunkMusic'),
-      relax: document.getElementById('relaxMusic'),
-      think: document.getElementById('thinkMusic'),
-    };
-    let currentMusic = 'doom';
+let historicPoolKey = "";
+let historicPlan = null;            // { key, order:[{m,d}], cursor:number }
+let historicPoolDedup = new Set();  // de-dup within a pool build
+let historicBuilding = false;
+let historicBuildAbort = null;
 
-    // --- DOM SHORTCUTS ---
-    const musicPauseBtn = document.getElementById('musicPauseBtn');
-    const musicSelect = document.getElementById('musicSelect');
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
-    // --- HISTORIC FUN FACT CATEGORY (Lists / Sports / Horror / War) ---
+function buildDayOrder() {
+  const order = [];
+  for (let m = 1; m <= 12; m++) {
+    const daysInMonth = new Date(2000, m, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) order.push({ m, d });
+  }
+  return shuffleArray(order);
+}
+
+function getHistoricKeyParts() {
+  const century = parseInt(document.getElementById('centurySelect').value);
+  const category = (currentFactCategory || 'lists').toLowerCase();
+  return { century, category, key: `${century}-${category}` };
+}
+
+function resetHistoricPool({ keepKey = false } = {}) {
+  try { if (historicBuildAbort) historicBuildAbort.abort(); } catch(_) {}
+  historicBuildAbort = null;
+  historicBuilding = false;
+
+  availableHistoricDates.length = 0;
+  historicPoolDedup = new Set();
+
+  if (!keepKey) {
+    historicPoolKey = "";
+    historicPlan = null;
+  }
+}
+
+function normalizeTextForMatch(s) {
+  const raw = (s || '').toLowerCase();
+  // Remove diacritics (México -> mexico) then keep only [a-z0-9] as tokens.
+  const noDiacritics = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const cleaned = noDiacritics.replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return ` ${cleaned} `;
+}
+
+function getEventMatchText(ev) {
+  if (!ev) return ' ';
+  let t = ev.description || '';
+  if (ev.wikipedia && Array.isArray(ev.wikipedia)) {
+    t += ' ' + ev.wikipedia.map(w => w && w.title ? w.title : '').join(' ');
+  }
+  return normalizeTextForMatch(t);
+}
+
+function initHistoricPlanIfNeeded(key) {
+  if (historicPlan && historicPlan.key === key) return;
+  historicPlan = { key, order: buildDayOrder(), cursor: 0 };
+}
+
+async function fetchEventsCached(month, day, signal) {
+  const k = `${month}-${day}`;
+  if (historicDayCache.has(k)) return historicDayCache.get(k);
+
+  const res = await fetch(`https://byabbe.se/on-this-day/${month}/${day}/events.json`, { signal });
+  if (!res.ok) throw new Error('Failed to fetch historic events');
+  const data = await res.json();
+  const events = Array.isArray(data.events) ? data.events : [];
+  historicDayCache.set(k, events);
+  return events;
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  let i = 0;
+  const n = Math.min(limit, items.length);
+  const workers = Array.from({ length: n }, () => (async () => {
+    while (i < items.length) {
+      const idx = i++;
+      await worker(items[idx], idx);
+    }
+  })());
+  await Promise.allSettled(workers);
+}
+
+async function warmHistoricPool({ minSize = 25, showStatus = false } = {}) {
+  const { century, category, key } = getHistoricKeyParts();
+
+  // If key changed, wipe pool & start a new plan.
+  if (historicPoolKey !== key) {
+    resetHistoricPool({ keepKey: false });
+    historicPoolKey = key;
+  }
+  initHistoricPlanIfNeeded(key);
+
+  const scanDefaults = {
+    lists: 70,
+    sports: 120,
+    horror: 110,
+    war: 110,
+    usa: 150,
+    mexico: 160,
+    japan: 150,
+    elsalvador: 240
+  };
+  const targetDefaults = {
+    lists: 30,
+    sports: 22,
+    horror: 22,
+    war: 22,
+    usa: 24,
+    mexico: 24,
+    japan: 24,
+    elsalvador: 16
+  };
+
+  const targetSize = Math.max(minSize, targetDefaults[category] || 25);
+  const maxDaysToScan = scanDefaults[category] || 120;
+
+  if (availableHistoricDates.length >= targetSize) return;
+
+  // If another build is in progress, wait briefly instead of starting yet another build.
+  if (historicBuilding) {
+    await new Promise(resolve => {
+      const start = Date.now();
+      const t = setInterval(() => {
+        if (!historicBuilding || availableHistoricDates.length >= minSize || (Date.now() - start) > 3500) {
+          clearInterval(t);
+          resolve();
+        }
+      }, 60);
+    });
+    return;
+  }
+
+  historicBuilding = true;
+  const controller = new AbortController();
+  historicBuildAbort = controller;
+
+  const dateDisplayEl = document.getElementById('dateDisplay');
+  const funFactEl = document.getElementById('funFact');
+
+  try {
+    // Pull the next slice of days to scan.
+    let slice = [];
+    for (let k = 0; k < maxDaysToScan; k++) {
+      if (historicPlan.cursor >= historicPlan.order.length) {
+        // We exhausted the year; reshuffle to keep sampling fresh.
+        historicPlan.order = buildDayOrder();
+        historicPlan.cursor = 0;
+      }
+      slice.push(historicPlan.order[historicPlan.cursor++]);
+    }
+
+    if (showStatus && dateDisplayEl && availableHistoricDates.length === 0) {
+      dateDisplayEl.textContent = "Loading historic facts…";
+      if (funFactEl) funFactEl.innerHTML = "";
+    }
+
+    // Scan those days in parallel.
+    let processed = 0;
+
+    await mapWithConcurrency(slice, 8, async ({ m, d }) => {
+      if (controller.signal.aborted) return;
+
+      try {
+        const events = await fetchEventsCached(m, d, controller.signal);
+        for (const ev of events) {
+          const y = parseInt(ev.year);
+          if (!Number.isFinite(y)) continue;
+          if (y < century || y >= (century + 100)) continue;
+          if (!ev.description || ev.description.length <= 30) continue;
+
+          if (!matchesHistoricCategory(ev, category)) continue;
+
+          const dedupKey = `${y}-${m}-${d}-${ev.description}`;
+          if (historicPoolDedup.has(dedupKey)) continue;
+          historicPoolDedup.add(dedupKey);
+
+          availableHistoricDates.push({
+            year: y,
+            month: m - 1,
+            day: d,
+            event: ev
+          });
+
+          if (availableHistoricDates.length >= targetSize) break;
+        }
+      } catch (_) {
+        // Ignore individual failures; the pool build is best-effort.
+      } finally {
+        processed++;
+        if (showStatus && dateDisplayEl && availableHistoricDates.length === 0 && processed % 10 === 0) {
+          dateDisplayEl.textContent = `Loading historic facts… (${processed}/${maxDaysToScan})`;
+        }
+      }
+    });
+  } finally {
+    if (historicBuildAbort === controller) historicBuildAbort = null;
+    historicBuilding = false;
+  }
+}
+
+function warmHistoricPoolInBackground() {
+  if (!historicMode) return;
+  if (historicBuilding) return;
+  if (availableHistoricDates.length >= 12) return;
+  // fire-and-forget
+  warmHistoricPool({ minSize: 22, showStatus: false });
+}
+
+
+    // --- HISTORIC FUN FACT CATEGORY (Lists / Soccer / Horror / War / Countries) ---
     const factCategorySelect = document.getElementById('factCategorySelect');
     let currentFactCategory = (factCategorySelect && factCategorySelect.value) ? factCategorySelect.value : 'lists';
 
@@ -826,7 +1022,7 @@
         const prevTime = timeRemaining;
         clearInterval(timerInterval);
 
-        generateDate().then(({ date, funFactText, funFactImage }) => {
+        generateDate().then(({ date, funFactText, funFactImage, funFactWiki }) => {
           // If we couldn't find a matching fact, don't softlock the run—just show a message.
           if (!date) {
             document.getElementById('funFact').innerHTML = `<div class="funfact-desc">${noValidDateMessage()}</div>`;
@@ -838,19 +1034,8 @@
           currentDate = date;
           const options = { year: 'numeric', month: 'long', day: 'numeric' };
           document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
+        renderHistoricFunFact(funFactText, funFactWiki);
 
-          if (historicMode && funFactText) {
-            let html = '';
-            if (funFactImage) {
-              html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
-                <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
-              </div>`;
-            }
-            html += `<div class="funfact-desc">${funFactText}</div>`;
-            document.getElementById('funFact').innerHTML = html;
-          } else {
-            document.getElementById('funFact').innerHTML = '';
-          }
 
           renderDayButtons();
           timeRemaining = prevTime;
@@ -861,24 +1046,67 @@
     }
 
 
-    // --- UTIL: Fetch Wikipedia Image for Event ---
-    async function fetchWikipediaImage(wikipediaLinks) {
-      if (!wikipediaLinks || !wikipediaLinks.length) return null;
-      // Try the first Wikipedia page name
-      const pageTitle = wikipediaLinks[0].title || wikipediaLinks[0].wikipedia.split('/').slice(-1)[0];
-      const url = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&pithumbsize=600&titles=${encodeURIComponent(pageTitle)}&origin=*`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const pages = data.query.pages;
-        for (const pageId in pages) {
-          if (pages[pageId].thumbnail && pages[pageId].thumbnail.source) {
-            return pages[pageId].thumbnail.source;
-          }
-        }
-      } catch (e) {}
-      return null;
+
+// --- UTIL: Fetch Wikipedia Image for Event (cached) ---
+async function fetchWikipediaImage(wikipediaLinks) {
+  if (!wikipediaLinks || !wikipediaLinks.length) return null;
+
+  const first = wikipediaLinks[0] || {};
+  const pageTitle = first.title || (first.wikipedia ? first.wikipedia.split('/').slice(-1)[0] : '');
+  const cacheKey = (pageTitle || '').toLowerCase();
+  if (!pageTitle) return null;
+
+  if (wikiImageCache.has(cacheKey)) return wikiImageCache.get(cacheKey);
+
+  const url = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&pithumbsize=600&titles=${encodeURIComponent(pageTitle)}&origin=*`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const pages = data && data.query && data.query.pages ? data.query.pages : {};
+    for (const pageId in pages) {
+      if (pages[pageId].thumbnail && pages[pageId].thumbnail.source) {
+        const img = pages[pageId].thumbnail.source;
+        wikiImageCache.set(cacheKey, img);
+        return img;
+      }
     }
+  } catch (e) {}
+
+  wikiImageCache.set(cacheKey, null);
+  return null;
+}
+
+// --- FUN FACT RENDER (lazy-load image so new rounds feel instant) ---
+let funFactToken = 0;
+
+function renderHistoricFunFact(funFactText, funFactWiki) {
+  const el = document.getElementById('funFact');
+  if (!el) return;
+
+  if (!(historicMode && funFactText)) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const token = ++funFactToken;
+  el.innerHTML = `
+    <div id="funFactImgHolder" style="width:100%;text-align:center;margin-bottom:9px;display:none;"></div>
+    <div class="funfact-desc">${funFactText}</div>
+  `;
+
+  if (!funFactWiki || !funFactWiki.length) return;
+
+  fetchWikipediaImage(funFactWiki).then(img => {
+    if (token !== funFactToken) return;
+    if (!img) return;
+
+    const holder = document.getElementById('funFactImgHolder');
+    if (!holder) return;
+
+    holder.style.display = 'block';
+    holder.innerHTML = `<img src="${img}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">`;
+  });
+}
 
     // --- Add this function for the correct overlay ---
     function showCorrectOverlay() {
@@ -983,59 +1211,19 @@
     }
 
 
-    // --- MUSIC CONTROL ---
-    function playMusic(track) {
-      Object.values(musicTracks).forEach(m => {
-        m.pause();
-        m.currentTime = 0;
-      });
-      musicTracks[track].play();
-      musicPauseBtn.innerHTML = '🎵⏸';
-      musicPauseBtn.setAttribute('aria-label', 'Pause music');
-    }
-    function pauseMusic(track) {
-      musicTracks[track].pause();
-      musicPauseBtn.innerHTML = '🎵▶️';
-      musicPauseBtn.setAttribute('aria-label', 'Play music');
-    }
-    function isMusicPaused(track) {
-      return musicTracks[track].paused;
-    }
-    function toggleMusic() {
-      if (isMusicPaused(currentMusic)) {
-        musicTracks[currentMusic].play();
-        musicPauseBtn.innerHTML = '🎵⏸';
-        musicPauseBtn.setAttribute('aria-label', 'Pause music');
-      } else {
-        musicTracks[currentMusic].pause();
-        musicPauseBtn.innerHTML = '🎵▶️';
-        musicPauseBtn.setAttribute('aria-label', 'Play music');
-      }
-    }
-    musicSelect.addEventListener('change', function () {
-      currentMusic = this.value;
-      playMusic(currentMusic);
-    });
+// On load
+document.addEventListener('DOMContentLoaded', function() {
+  if(window.innerWidth <= 600) {
+    document.querySelector('.sidebar-nav').classList.add('collapsed');
+  } else {
+    document.querySelector('.sidebar-nav').classList.remove('collapsed');
+  }
+  updateFunFactToggleBtn();
+  updateFunFactVisibility();
+  syncFactCategoryUI();
+});
 
-    // On load, pause all music
-    document.addEventListener('DOMContentLoaded', function() {
-      Object.values(musicTracks).forEach(m => { m.pause(); m.currentTime = 0; });
-      musicPauseBtn.innerHTML = '🎵▶️';
-      musicPauseBtn.setAttribute('aria-label', 'Play music');
-      if(window.innerWidth <= 600) {
-        document.querySelector('.sidebar-nav').classList.add('collapsed');
-      } else {
-        document.querySelector('.sidebar-nav').classList.remove('collapsed');
-      }
-      updateFunFactToggleBtn();
-      updateFunFactVisibility();
-      syncFactCategoryUI();
-    });
-    window.addEventListener('beforeunload', () => {
-      Object.values(musicTracks).forEach(m => m.pause());
-    });
-
-    // ================= GAME LOGIC ====================
+// ================= GAME LOGIC ====================
     const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const doomGuyFaces = ["😀", "😐", "😬", "😵"];
     function updateDoomguyFace() {
@@ -1051,9 +1239,23 @@
     function noValidDateMessage() {
       if (!historicMode) return "No valid date found!";
       const cat = (currentFactCategory || 'lists').toLowerCase();
+
+      const labels = {
+        lists: "Lists",
+        sports: "Soccer",
+        horror: "Horror",
+        war: "War",
+        usa: "USA",
+        elsalvador: "El Salvador",
+        mexico: "Mexico",
+        japan: "Japan"
+      };
+
       if (cat === 'lists') return "No historic fact found for that century. Try another century.";
-      return `No ${cat} historic fact found for that century. Try another category or century.`;
+      const label = labels[cat] || cat;
+      return `No ${label} historic fact found for that century. Try another category or century.`;
     }
+
 
 function startGame() {
       streakCount = 0;
@@ -1065,7 +1267,7 @@ function startGame() {
       lastCorrect = true;
       updateDoomguyFace();
 
-      generateDate().then(({ date, funFactText, funFactImage }) => {
+      generateDate().then(({ date, funFactText, funFactImage, funFactWiki }) => {
         if (!date) {
           document.getElementById('dateDisplay').textContent = noValidDateMessage();
           document.getElementById('funFact').innerHTML = "";
@@ -1078,18 +1280,8 @@ function startGame() {
         document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
 
         // Show fun fact only in historic mode, now with image!
-        if (historicMode && funFactText) {
-          let html = '';
-          if (funFactImage) {
-            html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
-              <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
-            </div>`;
-          }
-          html += `<div class="funfact-desc">${funFactText}</div>`;
-          document.getElementById('funFact').innerHTML = html;
-        } else {
-          document.getElementById('funFact').innerHTML = '';
-        }
+        renderHistoricFunFact(funFactText, funFactWiki);
+
 
         renderDayButtons();
         startTimer();
@@ -1107,8 +1299,17 @@ function startGame() {
       startGame();
     }
 
-    // --- HISTORIC FUN FACT CATEGORY FILTERS ---
-    function isMorbidFact(desc) {
+// --- HISTORIC FUN FACT CATEGORY FILTERS ---
+function toNorm(s) {
+  if (typeof s === 'string' && s.startsWith(' ')) return s; // already normalized by normalizeTextForMatch
+  return normalizeTextForMatch(s);
+}
+function hasAnyPhrase(normText, phrases) {
+  const d = toNorm(normText);
+  return phrases.some(p => d.includes(` ${normalizeTextForMatch(p).trim()} `));
+}
+
+function isMorbidFact(desc) {
       if (!desc) return false;
       const d = desc.toLowerCase();
       const morbidWords = [
@@ -1119,195 +1320,256 @@ function startGame() {
       return morbidWords.some(w => d.includes(w));
     }
 
-    function isWarFact(desc) {
-      if (!desc) return false;
-      const d = desc.toLowerCase();
-      const warWords = [
-        'war', 'battle', 'siege', 'invasion', 'revolution', 'conflict', 'fought', 'army',
-        'navy', 'military', 'soldier', 'forces', 'troops', 'hostilities', 'uprising',
-        'rebellion', 'retreat', 'surrender', 'allied', 'nazi', 'world war', 'civil war'
-      ];
-      return warWords.some(w => d.includes(w));
-    }
 
-    function isSportsFact(desc) {
-      if (!desc) return false;
-      const d = desc.toLowerCase();
-      const sportsWords = [
-        'olympic', 'olympics', 'world cup',
-        'championship', 'champion', 'tournament',
-        'final', 'finals',
-        'league', 'season',
-        'match', 'game', 'fixture',
-        'goal', 'score', 'scored', 'record',
-        'medal', 'gold medal', 'silver medal', 'bronze medal',
-        'athlete', 'athletes',
-        'team', 'coach', 'manager',
-        'stadium', 'arena',
+function isWarFact(text) {
+  const d = toNorm(text);
+  const warWords = [
+    'war', 'battle', 'siege', 'invasion', 'revolution', 'conflict', 'fought', 'army',
+    'navy', 'military', 'soldier', 'forces', 'troops', 'hostilities', 'uprising',
+    'rebellion', 'retreat', 'surrender', 'allied', 'nazi', 'world war', 'civil war'
+  ];
+  return hasAnyPhrase(d, warWords);
+}
 
-        // sports
-        'football', 'soccer', 'basketball', 'baseball',
-        'hockey', 'tennis', 'golf',
-        'boxing', 'mma', 'ufc',
-        'cricket', 'rugby',
-        'formula one', 'f1', 'grand prix',
-        'marathon', 'race', 'racing', 'relay', 'sprint',
-      ];
 
-      return sportsWords.some(w => d.includes(w));
-    }
 
-    function isHorrorFact(desc) {
-      if (!desc) return false;
-      const d = desc.toLowerCase();
-      const horrorWords = [
-        'halloween', 'ghost', 'haunted', 'witch', 'witches', 'demon', 'devil', 'satan',
-        'vampire', 'werewolf', 'zombie', 'monster', 'curse', 'cursed', 'occult', 'horror',
-        'spooky', 'frankenstein', 'dracula', 'kidnapping','cult','mystery', 'urban legend', 'legend', 'unsolved',
-        'mysterious', 'unexplained',
-        'unsolved', 'cold case',
-        'disturbing', 'chilling',
-        'creepy', 'eerie', 'unsolved mystery', 'unsolved case',
-    'mystery', 'mysterious disappearance',
-    'true crime', 'sacrifice','ritual'
-      ];
-      // "Horror" can include spooky + morbid/creepy real-world events, but we exclude wars.
-      return horrorWords.some(w => d.includes(w)) || (isMorbidFact(d) && (d.includes('murder') || d.includes('massacre') || d.includes('serial') || d.includes('killer')));
-    }
 
-    // Category rules:
-    // - lists: your original "safe" fun facts (exclude morbid + war)
-    // - sports: sports-only (exclude war)
-    // - horror: spooky-only (exclude war)
-    // - war: war-only
-    function matchesHistoricCategory(desc, category) {
-      const cat = (category || 'lists').toLowerCase();
-      if (cat === 'war') return isWarFact(desc);
-      if (cat === 'sports') return isSportsFact(desc) && !isWarFact(desc);
-      if (cat === 'horror') return isHorrorFact(desc) && !isWarFact(desc);
-      // lists (default): "safe" fun facts (exclude morbid + war)
-      return !isMorbidFact(desc) && !isWarFact(desc);
-    }
+function isHorrorFact(text) {
+  const d = toNorm(text);
 
-    function loadHistoricDatesAndStart() {
-      availableHistoricDates = [];
-      const century = parseInt(document.getElementById('centurySelect').value);
-      const years = Array.from({length: 100}, (_, i) => century + i);
-      let loaded = 0;
-      let datesToFetch = [];
-      for(let m = 1; m <= 12; m++) {
-        let daysInMonth = new Date(2000, m, 0).getDate();
-        for(let d = 1; d <= daysInMonth; d++) {
-          datesToFetch.push({month: m, day: d});
-        }
+  // "Horror" here = spooky/supernatural + eerie true-crime style keywords (not war).
+  // If you want it broader/narrower, edit this list.
+  const horrorWords = [
+    'horror', 'spooky', 'eerie', 'macabre',
+    'haunted', 'haunting', 'ghost', 'apparition', 'poltergeist',
+    'vampire', 'dracula', 'werewolf', 'witch', 'witchcraft',
+    'demon', 'devil', 'satan', 'occult', 'cult', 'ritual',
+    'curse', 'cursed',
+    'zombie', 'mummy', 'monster', 'ghoul',
+    'cemetery', 'grave', 'tomb', 'coffin', 'crypt',
+    'exorcism', 'possession',
+    'serial killer', 'ripper', 'jack the ripper',
+    'kidnapping', 'abduction', 'disappearance'
+  ];
+
+  return hasAnyPhrase(d, horrorWords);
+}
+
+function isSportsFact(text) {
+  const d = toNorm(text);
+
+  // Soccer-only filter (tries to avoid other sports).
+  const exclude = [
+    'american football',
+    'nfl', 'super bowl', 'touchdown', 'quarterback', 'linebacker',
+    'nba', 'mlb', 'nhl',
+    'basketball', 'baseball', 'hockey', 'ice hockey',
+    'cricket', 'rugby',
+    'formula one', 'f1', 'grand prix', 'nascar',
+    'tennis', 'golf', 'boxing', 'mma', 'ufc'
+  ];
+  if (hasAnyPhrase(d, exclude)) return false;
+
+  const strongSoccer = [
+    'soccer', 'association football',
+    'fifa', 'uefa',
+    'world cup',
+    'champions league', 'europa league', 'conference league',
+    'premier league', 'la liga', 'serie a', 'bundesliga', 'ligue 1',
+    'mls', 'major league soccer',
+    'copa america', 'africa cup of nations', 'afcon',
+    'concacaf', 'conmebol', 'caf', 'afc',
+    'fa cup', 'copa del rey', 'coppa italia'
+  ];
+
+  const soccerGameplay = [
+    'goal',
+    'penalty', 'penalties', 'penalty shootout', 'shootout',
+    'offside',
+    'red card', 'yellow card',
+    'free kick', 'corner',
+    'goalkeeper', 'keeper', 'striker', 'midfielder', 'defender',
+    'hat trick', 'hattrick',
+    'extra time'
+  ];
+
+  if (hasAnyPhrase(d, strongSoccer)) return true;
+
+  // "football" is ambiguous, so only accept it if it comes with soccer gameplay terms.
+  if (d.includes(' football ') && hasAnyPhrase(d, soccerGameplay)) return true;
+
+  // "footballer" is very often used for soccer.
+  if (d.includes(' footballer ')) return true;
+
+  return false;
+}
+
+
+
+function isCountryFact(text, countryCode) {
+  const d = toNorm(text);
+  const c = (countryCode || '').toLowerCase();
+
+  if (c === 'usa') {
+    return hasAnyPhrase(d, [
+      // Country & Institutions
+      'united states', 'united states of america', 'u s a', 'u s', 'usa', 'american',
+      'white house', 'pentagon', 'congress', 'nasa', 'fbi', 'cia',
+      // Major Cities
+      'washington dc', 'washington d c', 'new york', 'los angeles', 'chicago',
+      'houston', 'philadelphia', 'phoenix', 'san antonio', 'san diego', 'dallas',
+      'san jose', 'austin', 'jacksonville', 'fort worth', 'columbus', 'san francisco',
+      'charlotte', 'indianapolis', 'seattle', 'denver', 'boston', 'nashville',
+      'detroit', 'oklahoma city', 'portland', 'las vegas', 'memphis', 'louisville',
+      'baltimore', 'milwaukee', 'albuquerque', 'tucson', 'fresno', 'sacramento',
+      'atlanta', 'kansas city', 'miami', 'raleigh', 'omaha', 'cleveland', 'new orleans',
+      // All 50 States
+      'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado',
+      'connecticut', 'delaware', 'florida', 'georgia', 'hawaii', 'idaho',
+      'illinois', 'indiana', 'iowa', 'kansas', 'kentucky', 'louisiana', 'maine',
+      'maryland', 'massachusetts', 'michigan', 'minnesota', 'mississippi',
+      'missouri', 'montana', 'nebraska', 'nevada', 'new hampshire', 'new jersey',
+      'new mexico', 'new york', 'north carolina', 'north dakota', 'ohio',
+      'oklahoma', 'oregon', 'pennsylvania', 'rhode island', 'south carolina',
+      'south dakota', 'tennessee', 'texas', 'utah', 'vermont', 'virginia',
+      'washington', 'west virginia', 'wisconsin', 'wyoming'
+    ]);
+  }
+
+  if (c === 'elsalvador') {
+    return hasAnyPhrase(d, [
+      // Country & Identity
+      'el salvador', 'salvadoran', 'salvadorean', 'cuscatlan',
+      // All 14 Departments
+      'ahuachapan', 'cabanas', 'chalatenango', 'cuscatlan', 'la libertad',
+      'la paz', 'la union', 'morazan', 'san miguel', 'san salvador',
+      'san vicente', 'santa ana', 'sonsonate', 'usulutan',
+      // Cities & Key Locations
+      'soyapango', 'santa tecla', 'mejicanos', 'apopa', 'delgado',
+      'ilopango', 'el mozote', 'suchitoto', 'acajutla'
+    ]);
+  }
+
+  if (c === 'mexico') {
+    return hasAnyPhrase(d, [
+      // Country, Identity & History
+      'mexico', 'mexican', 'aztec', 'maya', 'mayan', 'tenochtitlan', 'zapatista',
+      // Major Cities
+      'mexico city', 'ciudad de mexico', 'cdmx', 'guadalajara', 'monterrey',
+      'puebla', 'toluca', 'tijuana', 'juarez', 'torreon', 'queretaro',
+      'san luis potosi', 'merida', 'mexicali', 'aguascalientes', 'acapulco',
+      'cancun', 'chihuahua', 'hermosillo', 'saltillo', 'veracruz',
+      // Key States
+      'jalisco', 'nuevo leon', 'michoacan', 'guanajuato', 'baja california',
+      'yucatan', 'chiapas', 'oaxaca', 'sinaloa', 'tamaulipas', 'sonora',
+      'coahuila', 'durango', 'guerrero', 'morelos', 'nayarit', 'tabasco'
+    ]);
+  }
+
+  if (c === 'japan') {
+    return hasAnyPhrase(d, [
+      // Country, Identity & History
+      'japan', 'japanese', 'nihon', 'nippon', 'empire of japan',
+      'shogun', 'samurai', 'meiji', 'edo',
+      // Major Cities
+      'tokyo', 'yokohama', 'osaka', 'nagoya', 'sapporo', 'fukuoka',
+      'kobe', 'kyoto', 'kawasaki', 'saitama', 'hiroshima', 'sendai',
+      'kitakyushu', 'chiba', 'sakai', 'niigata', 'hamamatsu', 'nagasaki',
+      // Islands & Regions
+      'hokkaido', 'honshu', 'shikoku', 'kyushu', 'okinawa', 'ryukyu'
+    ]);
+  }
+
+  return false;
+}
+
+
+// Category rules:
+// - lists: "safe" fun facts (exclude morbid + war)
+// - sports: soccer-only (exclude war)
+// - horror: spooky-only (exclude war)
+// - war: war-only
+// - usa/elsalvador/mexico/japan: country-only (safe like lists)
+function matchesHistoricCategory(ev, category) {
+  const cat = (category || 'lists').toLowerCase();
+  const d = getEventMatchText(ev);
+
+  // Country categories behave like "lists" (safe fun facts), but restricted to that country.
+  if (cat === 'usa' || cat === 'elsalvador' || cat === 'mexico' || cat === 'japan') {
+    return isCountryFact(d, cat) && !isMorbidFact(d) && !isWarFact(d);
+  }
+
+  if (cat === 'war') return isWarFact(d);
+  if (cat === 'sports') return isSportsFact(d) && !isWarFact(d);
+  if (cat === 'horror') return isHorrorFact(d) && !isWarFact(d);
+
+  // lists (default)
+  return !isMorbidFact(d) && !isWarFact(d);
+}
+
+
+
+function loadHistoricDatesAndStart() {
+  // Warm up the pool so generating the next date doesn't need dozens of network calls.
+  if (!historicMode) return;
+  warmHistoricPool({ minSize: 22, showStatus: false });
+}
+
+
+function generateDate() {
+  return new Promise(async (resolve, reject) => {
+    if (isGameOver || isPaused) return;
+    clearInterval(timerInterval);
+
+    if (historicMode) {
+      const { key } = getHistoricKeyParts();
+
+      // If the user changed century/category, reset the pool.
+      if (historicPoolKey !== key) {
+        resetHistoricPool({ keepKey: false });
+        historicPoolKey = key;
       }
-      let processed = 0;
-      let maxToScan = 5;
-      function processNext() {
-        if(processed >= Math.min(datesToFetch.length, maxToScan)) {
-          if (availableHistoricDates.length === 0) {
-            document.getElementById('dateDisplay').textContent = "No historic dates found. Try a different century!";
-          } else {
-            startGame();
-          }
-          return;
-        }
-        let {month, day} = datesToFetch[processed++];
-        fetch(`https://byabbe.se/on-this-day/${month}/${day}/events.json`)
-          .then(resp => resp.ok ? resp.json() : Promise.reject())
-          .then(data => {
-            if(data.events) {
-              data.events.forEach(ev => {
-                let y = parseInt(ev.year);
-                if (years.includes(y) && ev.description.length > 30) {
-                  availableHistoricDates.push({
-                    year: y,
-                    month: month-1,
-                    day: day,
-                    event: ev
-                  });
-                }
-              });
-            }
-          })
-          .finally(() => {
-            if(processed % 10 === 0) {
-              document.getElementById('dateDisplay').textContent = `Scanning for historic dates... (${processed}/${maxToScan})`;
-            }
-            processNext();
-          });
+      initHistoricPlanIfNeeded(key);
+
+      // Ensure we have at least 1 candidate in the pool.
+      if (availableHistoricDates.length === 0) {
+        await warmHistoricPool({ minSize: 18, showStatus: true });
       }
-      processNext();
-    }
 
-    function generateDate() {
-      return new Promise((resolve, reject) => {
-        if (isGameOver || isPaused) return;
-        clearInterval(timerInterval);
+      if (availableHistoricDates.length === 0) {
+        resolve({ date: null, funFactText: null, funFactImage: null, funFactWiki: null });
+        return;
+      }
 
-        if (historicMode) {
-          const century = parseInt(document.getElementById('centurySelect').value);
-          const years = Array.from({ length: 100 }, (_, i) => century + i);
-          const category = (currentFactCategory || 'lists').toLowerCase();
-          const maxTries = (category === 'lists') ? 60 : (category === 'sports' ? 160 : (category === 'horror' ? 200 : 180));
-          let tries = 0;
-          function tryRandomDay() {
-            tries++;
-            if (tries > maxTries) {
-              resolve({ date: null, funFactText: null, funFactImage: null });
-              return;
-            }
-            const month = Math.floor(Math.random() * 12) + 1;
-            const daysInMonth = new Date(2000, month, 0).getDate();
-            const day = Math.floor(Math.random() * daysInMonth) + 1;
-            fetch(`https://byabbe.se/on-this-day/${month}/${day}/events.json`)
-              .then(resp => resp.ok ? resp.json() : Promise.reject())
-              .then(async data => {
-                let found = null;
-                if (data.events) {
-                  const candidates = data.events.filter(ev =>
-                    years.includes(parseInt(ev.year)) &&
-                    ev.description.length > 30 &&
-                    matchesHistoricCategory(ev.description, category)
-                  );
-                  if (candidates.length > 0) {
-                    found = candidates[Math.floor(Math.random() * candidates.length)];
-                  }
-                }
-                if (found) {
-                  const y = parseInt(found.year);
-                  const dateObj = new Date(y, month - 1, day);
-                  // --- Fetch image from Wikipedia, if possible ---
-                  let img = null;
-                  if (found.wikipedia && found.wikipedia.length) {
-                    img = await fetchWikipediaImage(found.wikipedia);
-                  }
-                  resolve({
-                    date: dateObj,
-                    funFactText: found.description.replace(/^[:\d\s\.\-–—]*(?=[A-Za-z])/, ""),
-                    funFactImage: img
-                  });
-                } else {
-                  tryRandomDay();
-                }
-              })
-              .catch(() => {
-                tryRandomDay();
-              });
-          }
-          tryRandomDay();
-          return;
-        }
-        // --- DEFAULT MODE ---
-        const century = parseInt(document.getElementById('centurySelect').value);
-        const year = Math.floor(Math.random() * 100) + century;
-        const month = Math.floor(Math.random() * 12);
-        const maxDay = new Date(year, month + 1, 0).getDate();
-        const randomDay = Math.floor(Math.random() * maxDay) + 1;
-        const dateObj = new Date(year, month, randomDay);
-        resolve({ date: dateObj, funFactText: null, funFactImage: null });
+      // Pick one and remove it to reduce immediate repeats.
+      const idx = Math.floor(Math.random() * availableHistoricDates.length);
+      const pick = availableHistoricDates.splice(idx, 1)[0];
+
+      const y = parseInt(pick.event.year);
+      const dateObj = new Date(y, pick.month, pick.day);
+
+      resolve({
+        date: dateObj,
+        funFactText: (pick.event.description || '').replace(/^[:\d\s\.\-–—]*(?=[A-Za-z])/, ""),
+        funFactImage: null, // loaded lazily for speed
+        funFactWiki: pick.event.wikipedia || null
       });
+
+      // Refill in the background when running low.
+      setTimeout(() => warmHistoricPoolInBackground(), 0);
+      return;
     }
+
+    // --- DEFAULT MODE ---
+    const century = parseInt(document.getElementById('centurySelect').value);
+    const year = Math.floor(Math.random() * 100) + century;
+    const month = Math.floor(Math.random() * 12);
+    const maxDay = new Date(year, month + 1, 0).getDate();
+    const randomDay = Math.floor(Math.random() * maxDay) + 1;
+    const dateObj = new Date(year, month, randomDay);
+    resolve({ date: dateObj, funFactText: null, funFactImage: null, funFactWiki: null });
+  });
+}
 
     function renderDayButtons() {
       const container = document.getElementById('dayButtons');
@@ -1356,7 +1618,7 @@ function startGame() {
         resetTimer();
         if (!voiceRoundActive) {
           setTimeout(() => {
-            generateDate().then(({ date, funFactText, funFactImage }) => {
+            generateDate().then(({ date, funFactText, funFactImage, funFactWiki }) => {
               if (!date) {
                 document.getElementById('dateDisplay').textContent = noValidDateMessage();
                 document.getElementById('funFact').innerHTML = "";
@@ -1367,18 +1629,8 @@ function startGame() {
               const options = { year: 'numeric', month: 'long', day: 'numeric' };
               document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
               // Show fun fact only in historic mode, now with image!
-              if (historicMode && funFactText) {
-                let html = '';
-                if (funFactImage) {
-                  html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
-                    <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
-                  </div>`;
-                }
-                html += `<div class="funfact-desc">${funFactText}</div>`;
-                document.getElementById('funFact').innerHTML = html;
-              } else {
-                document.getElementById('funFact').innerHTML = '';
-              }
+        renderHistoricFunFact(funFactText, funFactWiki);
+
               renderDayButtons();
               startTimer();
               updateDoomguyFace();
@@ -1545,11 +1797,15 @@ function startGame() {
         updateFunFactVisibility();
       });
 
-      // -- Update availableHistoricDates if century changes
-      document.getElementById('centurySelect').addEventListener('change', () => {
-        availableHistoricDates = [];
-        if (historicMode) loadHistoricDatesAndStart();
-      });
+// -- Reset historic pool if century changes (prevents slow re-fetch loops)
+document.getElementById('centurySelect').addEventListener('change', () => {
+  resetHistoricPool({ keepKey: false });
+  if (historicMode) {
+    // Warm the pool and immediately start a fresh round.
+    loadHistoricDatesAndStart();
+    startGame();
+  }
+});
 
       // === VOICE MODE (autoplay, SFX, stop button) ===
       let voiceRoundActive = false;
@@ -1670,10 +1926,7 @@ function startGame() {
           u.pitch = 1.12;
           u.onstart = () => setVoiceStatus(`🗣️ Speaking: “${spoken}” …`, 'speaking');
           u.onerror = (e) => { setVoiceStatus('❌ TTS error.', 'error'); reject(e.error || e); };
-          let track = null;
-          try { track = currentMusic && musicTracks[currentMusic]; if (track && !track.paused) track.volume = 0.25; } catch(_){}
           u.onend = () => {
-            try { if (track) track.volume = 1.0; } catch(_){}
             resolve();
           };
           window.speechSynthesis.cancel();
@@ -1768,7 +2021,7 @@ function startGame() {
         }
 
         // === CALL generateDate() ONCE AND USE RESULT ===
-        const { date, funFactText, funFactImage } = await generateDate();
+        const { date, funFactText, funFactImage, funFactWiki } = await generateDate();
         if (!date) {
           setVoiceStatus('❌ Could not find a valid historic date.', 'error');
           voiceRoundActive = false;
@@ -1781,18 +2034,8 @@ function startGame() {
         document.getElementById('dateDisplay').textContent = currentDate.toLocaleDateString('en-US', options);
 
         // Show fun fact (if any, with image)
-        if (historicMode && funFactText) {
-          let html = '';
-          if (funFactImage) {
-            html += `<div style="width:100%;text-align:center;margin-bottom:9px;">
-              <img src="${funFactImage}" alt="Related" style="max-width:100%;height:auto;border-radius:11px;box-shadow:0 2px 12px #000a;max-height:210px;object-fit:contain;">
-            </div>`;
-          }
-          html += `<div class="funfact-desc">${funFactText}</div>`;
-          document.getElementById('funFact').innerHTML = html;
-        } else {
-          document.getElementById('funFact').innerHTML = '';
-        }
+        renderHistoricFunFact(funFactText, funFactWiki);
+
 
         renderDayButtons();
         startTimer();
@@ -1960,42 +2203,41 @@ function startGame() {
 
 
       function announceOutcome(correct, heard, seconds = null) {
-        return new Promise((resolve) => {
-          if (!('speechSynthesis' in window)) return resolve();
-          const s = seconds != null ? seconds.toFixed(2) : null;
-          let line;
-          if (correct) {
-            const praise = ["Nice shot!", "Clean hit!", "Sharp!", "On point!", "Boom—headshot!"];
-            line = `${praise[Math.floor(Math.random() * praise.length)]} ${s ? `You answered in ${s} seconds.` : ''}`;
-          } else {
-            const correctDay = daysOfWeek[currentDate.getDay()];
-            line = `Close, but not quite. The correct day was ${correctDay}. ${s ? `Your answer time was ${s} seconds.` : ''}`;
-          }
+  return new Promise((resolve) => {
+    if (!('speechSynthesis' in window)) return resolve();
+    const s = seconds != null ? seconds.toFixed(2) : null;
+    let line = s ? `You've answered in ${s} seconds.` : `Answer received.`;
+    if (!correct) {
+      const correctDay = daysOfWeek[currentDate.getDay()];
+      line = s
+        ? `You've answered in ${s} seconds. The correct day was ${correctDay}.`
+        : `The correct day was ${correctDay}.`;
+    }
 
-          // --- If in historic mode + voice mode, say the fun fact as well
-          if (historicMode && voiceRoundActive) {
-            // Try to get the fun fact DOM content
-            const funFactNode = document.querySelector('.funfact-desc');
-            if(funFactNode && funFactNode.textContent.trim().length > 0) {
-              // Add a pause before fun fact for clarity
-              line += ` Did you know? On this day, ${funFactNode.textContent.trim()}`;
-            }
-          }
-
-          const u = new SpeechSynthesisUtterance(line);
-          const v = pickExpressiveVoice();
-          if (v) u.voice = v;
-          u.rate = correct ? 1.06 : 1.0;
-          u.pitch = correct ? 1.15 : 1.0;
-          u.onend = () => resolve();
-          u.onerror = () => resolve();
-          try {
-            window.speechSynthesis.speak(u);
-          } catch (_) {
-            resolve();
-          }
-        });
+    // --- If in historic mode + voice mode, say the fun fact as well
+    if (historicMode && voiceRoundActive) {
+      // Try to get the fun fact DOM content
+      const funFactNode = document.querySelector('.funfact-desc');
+      if (funFactNode && funFactNode.textContent.trim().length > 0) {
+        // Add a pause before fun fact for clarity
+        line += ` Did you know? On this day, ${funFactNode.textContent.trim()}`;
       }
+    }
+
+    const u = new SpeechSynthesisUtterance(line);
+    const v = pickExpressiveVoice();
+    if (v) u.voice = v;
+    u.rate = correct ? 1.06 : 1.0;
+    u.pitch = correct ? 1.15 : 1.0;
+    u.onend = () => resolve();
+    u.onerror = () => resolve();
+    try {
+      window.speechSynthesis.speak(u);
+    } catch (_) {
+      resolve();
+    }
+  });
+}
 
       // Add this to allow user to stop voice mode loop
       function stopVoiceMode() {
