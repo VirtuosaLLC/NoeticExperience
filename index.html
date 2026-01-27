@@ -651,6 +651,12 @@
       height: 0 !important;
     }
 
+    #funFact.funfact-float{
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+
   </style>
 </head>
 <body>
@@ -723,7 +729,6 @@
       <option value="sports">Facts: Soccer</option>
       <option value="horror">Facts: Horror</option>
       <option value="war">Facts: War</option>
-      <option value="music">Facts: Music</option>
       <option value="usa">Facts: USA</option>
       <option value="elsalvador">Facts: El Salvador</option>
       <option value="mexico">Facts: Mexico</option>
@@ -874,19 +879,7 @@ async function mapWithConcurrency(items, limit, worker) {
   await Promise.allSettled(workers);
 }
 
-const descLenDefaults = {
-  lists: 24,
-  sports: 16,
-  horror: 16,
-  war: 16,
-  music: 8,
-  usa: 18,
-  mexico: 18,
-  japan: 18,
-  elsalvador: 14
-};
-
-async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = null, minDescLen = null } = {}) {
+async function warmHistoricPool({ minSize = 25, showStatus = false } = {}) {
   const { century, category, key } = getHistoricKeyParts();
 
   // If key changed, wipe pool & start a new plan.
@@ -897,32 +890,28 @@ async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = n
   initHistoricPlanIfNeeded(key);
 
   const scanDefaults = {
-    lists: 120,
-    sports: 200,
-    horror: 200,
-    war: 200,
-    music: 240,
-    usa: 220,
-    mexico: 240,
-    japan: 220,
-    elsalvador: 360
+    lists: 70,
+    sports: 120,
+    horror: 110,
+    war: 110,
+    usa: 150,
+    mexico: 160,
+    japan: 150,
+    elsalvador: 240
   };
   const targetDefaults = {
-    lists: 50,
-    sports: 40,
-    horror: 40,
-    war: 40,
-    music: 50,
-    usa: 45,
-    mexico: 45,
-    japan: 45,
-    elsalvador: 28
+    lists: 30,
+    sports: 22,
+    horror: 22,
+    war: 22,
+    usa: 24,
+    mexico: 24,
+    japan: 24,
+    elsalvador: 16
   };
 
   const targetSize = Math.max(minSize, targetDefaults[category] || 25);
-  const maxDaysToScan = (scanDays != null ? scanDays : (scanDefaults[category] || 120));
-
-  const descMin = (minDescLen != null ? minDescLen : (descLenDefaults[category] ?? 20));
+  const maxDaysToScan = scanDefaults[category] || 120;
 
   if (availableHistoricDates.length >= targetSize) return;
 
@@ -976,7 +965,7 @@ async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = n
           const y = parseInt(ev.year);
           if (!Number.isFinite(y)) continue;
           if (y < century || y >= (century + 100)) continue;
-          if (!ev.description || ev.description.length < descMin) continue;
+          if (!ev.description || ev.description.length <= 30) continue;
 
           if (!matchesHistoricCategory(ev, category)) continue;
 
@@ -1011,13 +1000,13 @@ async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = n
 function warmHistoricPoolInBackground() {
   if (!historicMode) return;
   if (historicBuilding) return;
-  if (availableHistoricDates.length >= 24) return;
+  if (availableHistoricDates.length >= 12) return;
   // fire-and-forget
-  warmHistoricPool({ minSize: 30, showStatus: false, scanDays: 60 });
+  warmHistoricPool({ minSize: 22, showStatus: false });
 }
 
 
-    // --- HISTORIC FUN FACT CATEGORY (Lists / Soccer / Horror / War / Music / Countries) ---
+    // --- HISTORIC FUN FACT CATEGORY (Lists / Soccer / Horror / War / Countries) ---
     const factCategorySelect = document.getElementById('factCategorySelect');
     let currentFactCategory = (factCategorySelect && factCategorySelect.value) ? factCategorySelect.value : 'lists';
 
@@ -1262,7 +1251,6 @@ document.addEventListener('DOMContentLoaded', function() {
         sports: "Soccer",
         horror: "Horror",
         war: "War",
-        music: "Music",
         usa: "USA",
         elsalvador: "El Salvador",
         mexico: "Mexico",
@@ -1423,84 +1411,6 @@ function isSportsFact(text) {
 }
 
 
-function isMusicFact(text) {
-  const d = toNorm(text);
-
-  // Avoid some common false positives for the word "band".
-  const bandFalsePositives = [
-    'rubber band', 'elastic band', 'bandwidth', 'band of'
-  ];
-
-  const strong = [
-    // Releases & formats
-    'album', 'ep', 'song', 'track', 'soundtrack', 'music video',
-    // Industry / awards / charts
-    'grammy', 'billboard',
-    // Live music
-    'concert',
-    // People / groups
-    'singer', 'musician', 'rapper', 'dj', 'composer',
-    // Classical / theatre
-    'orchestra', 'symphony', 'musical'
-  ];
-
-  if (hasAnyPhrase(d, strong)) return true;
-
-  // --- NEW: Iconic 1900s Bands ---
-  // These are specific enough to verify as music facts without extra context.
-  // Note: Single-word bands like "Queen", "Kiss", or "Rush" are omitted 
-  // to prevent false positives in normal sentences.
-  const legendaryBands = [
-    // The Big Four / British Invasion / Classic Rock
-    'the beatles', 'rolling stones', 'led zeppelin', 'pink floyd', 'the who',
-    'black sabbath', 'deep purple', 'fleetwood mac', 'the doors', 'beach boys',
-    'creedence clearwater', 'grateful dead', 'jefferson airplane', 'jimi hendrix',
-    'bob dylan', 'david bowie', 'elton john', 'eric clapton',
-    
-    // Hard Rock / Heavy Metal
-    'ac/dc', 'aerosmith', 'guns n roses', 'van halen', 'metallica', 
-    'iron maiden', 'judas priest', 'motorhead', 'megadeth', 'slayer', 'pantera',
-    'def leppard', 'motley crue', 'alice cooper', 'ozzy osbourne',
-
-    // Punk / New Wave / Post-Punk
-    'the ramones', 'sex pistols', 'the clash', 'talking heads', 'blondie',
-    'joy division', 'the cure', 'the smiths', 'depeche mode', 'new order',
-    'u2', 'r.e.m.', 'radiohead',
-
-    // Grunge / Alt Rock (Late 1900s)
-    'nirvana', 'pearl jam', 'soundgarden', 'alice in chains', 
-    'red hot chili peppers', 'smashing pumpkins', 'green day', 'foo fighters',
-    'rage against the machine', 'beastie boys',
-
-    // Pop / Disco Groups
-    'abba', 'bee gees', 'michael jackson', 'madonna', 'whitney houston'
-  ];
-
-  if (hasAnyPhrase(d, legendaryBands)) return true;
-  // --------------------------------
-
-  // "band" is useful but ambiguous: only accept if it comes with extra music context.
-  if (d.includes(' band ') && !hasAnyPhrase(d, bandFalsePositives)) {
-    const bandContext = [
-      'album', 'song', 'concert',
-      'guitar', 'drummer', 'bassist', 'vocalist'
-    ];
-    if (hasAnyPhrase(d, bandContext)) return true;
-  }
-
-  // Genre terms can help, but require a music-ish context word too.
-  const genres = [
-    'rock', 'pop', 'hip hop', 'rap', 'jazz', 'blues', 'classical', 'metal', 'punk',
-    'reggae', 'salsa', 'bachata', 'merengue', 'cumbia',
-    'k pop', 'j pop', 'edm', 'electronic', 'house', 'techno', 'trance'
-  ];
-  const genreContext = [
-    'album', 'song', 'track', 'band', 'singer', 'musician', 'rapper', 'dj', 'composer', 'concert'
-  ];
-  if (hasAnyPhrase(d, genres) && hasAnyPhrase(d, genreContext)) return true;
-
-  return false;
-}
 
 function isCountryFact(text, countryCode) {
   const d = toNorm(text);
@@ -1508,76 +1418,46 @@ function isCountryFact(text, countryCode) {
 
   if (c === 'usa') {
     return hasAnyPhrase(d, [
-      // Country & Institutions
-      'united states', 'united states of america', 'u s a', 'u s', 'usa', 'american',
-      'white house', 'pentagon', 'congress', 'nasa', 'fbi', 'cia',
-      // Major Cities
-      'washington dc', 'washington d c', 'new york', 'los angeles', 'chicago',
-      'houston', 'philadelphia', 'phoenix', 'san antonio', 'san diego', 'dallas',
-      'san jose', 'austin', 'jacksonville', 'fort worth', 'columbus', 'san francisco',
-      'charlotte', 'indianapolis', 'seattle', 'denver', 'boston', 'nashville',
-      'detroit', 'oklahoma city', 'portland', 'las vegas', 'memphis', 'louisville',
-      'baltimore', 'milwaukee', 'albuquerque', 'tucson', 'fresno', 'sacramento',
-      'atlanta', 'kansas city', 'miami', 'raleigh', 'omaha', 'cleveland', 'new orleans',
-      // All 50 States
-      'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado',
-      'connecticut', 'delaware', 'florida', 'georgia', 'hawaii', 'idaho',
-      'illinois', 'indiana', 'iowa', 'kansas', 'kentucky', 'louisiana', 'maine',
-      'maryland', 'massachusetts', 'michigan', 'minnesota', 'mississippi',
-      'missouri', 'montana', 'nebraska', 'nevada', 'new hampshire', 'new jersey',
-      'new mexico', 'new york', 'north carolina', 'north dakota', 'ohio',
-      'oklahoma', 'oregon', 'pennsylvania', 'rhode island', 'south carolina',
-      'south dakota', 'tennessee', 'texas', 'utah', 'vermont', 'virginia',
-      'washington', 'west virginia', 'wisconsin', 'wyoming'
+      'united states', 'united states of america',
+      'u s a', 'u s', 'usa', 'american',
+      'washington dc', 'washington d c',
+      'new york', 'los angeles', 'san francisco', 'chicago', 'boston',
+      'california', 'texas', 'florida', 'philadelphia', 'seattle', 'miami',
+      'new jersey', 'massachusetts', 'georgia', 'illinois', 'pennsylvania'
     ]);
   }
 
   if (c === 'elsalvador') {
     return hasAnyPhrase(d, [
-      // Country & Identity
-      'el salvador', 'salvadoran', 'salvadorean', 'cuscatlan',
-      // All 14 Departments
-      'ahuachapan', 'cabanas', 'chalatenango', 'cuscatlan', 'la libertad',
-      'la paz', 'la union', 'morazan', 'san miguel', 'san salvador',
-      'san vicente', 'santa ana', 'sonsonate', 'usulutan',
-      // Cities & Key Locations
-      'soyapango', 'santa tecla', 'mejicanos', 'apopa', 'delgado',
-      'ilopango', 'el mozote', 'suchitoto', 'acajutla'
+      'el salvador', 'salvadoran',
+      'san salvador', 'santa ana', 'san miguel', 'san vicente',
+      'soyapango', 'santa tecla',
+      'la union', 'la libertad', 'chalatenango', 'sonsonate',
+      'ahuachapan', 'cuscatlan', 'cabanas', 'morazan', 'usulutan', 'la paz'
     ]);
   }
 
   if (c === 'mexico') {
     return hasAnyPhrase(d, [
-      // Country, Identity & History
-      'mexico', 'mexican', 'aztec', 'maya', 'mayan', 'tenochtitlan', 'zapatista',
-      // Major Cities
-      'mexico city', 'ciudad de mexico', 'cdmx', 'guadalajara', 'monterrey',
-      'puebla', 'toluca', 'tijuana', 'juarez', 'torreon', 'queretaro',
-      'san luis potosi', 'merida', 'mexicali', 'aguascalientes', 'acapulco',
-      'cancun', 'chihuahua', 'hermosillo', 'saltillo', 'veracruz',
-      // Key States
-      'jalisco', 'nuevo leon', 'michoacan', 'guanajuato', 'baja california',
-      'yucatan', 'chiapas', 'oaxaca', 'sinaloa', 'tamaulipas', 'sonora',
-      'coahuila', 'durango', 'guerrero', 'morelos', 'nayarit', 'tabasco'
+      'mexico', 'mexican', 'mexico city', 'ciudad de mexico', 'cdmx',
+      'guadalajara', 'monterrey', 'tijuana', 'puebla', 'oaxaca',
+      'yucatan', 'cancun', 'veracruz', 'chiapas', 'queretaro',
+      'ciudad juarez', 'juarez', 'baja california'
     ]);
   }
 
   if (c === 'japan') {
     return hasAnyPhrase(d, [
-      // Country, Identity & History
-      'japan', 'japanese', 'nihon', 'nippon', 'empire of japan',
-      'shogun', 'samurai', 'meiji', 'edo',
-      // Major Cities
-      'tokyo', 'yokohama', 'osaka', 'nagoya', 'sapporo', 'fukuoka',
-      'kobe', 'kyoto', 'kawasaki', 'saitama', 'hiroshima', 'sendai',
-      'kitakyushu', 'chiba', 'sakai', 'niigata', 'hamamatsu', 'nagasaki',
-      // Islands & Regions
-      'hokkaido', 'honshu', 'shikoku', 'kyushu', 'okinawa', 'ryukyu'
+      'japan', 'japanese', 'nihon', 'nippon',
+      'tokyo', 'osaka', 'kyoto', 'hiroshima', 'nagoya',
+      'yokohama', 'sapporo', 'okinawa', 'fukuoka', 'kobe',
+      'honshu', 'hokkaido', 'kyushu', 'shikoku'
     ]);
   }
 
   return false;
 }
+
 
 
 // Category rules:
@@ -1598,7 +1478,6 @@ function matchesHistoricCategory(ev, category) {
   if (cat === 'war') return isWarFact(d);
   if (cat === 'sports') return isSportsFact(d) && !isWarFact(d);
   if (cat === 'horror') return isHorrorFact(d) && !isWarFact(d);
-  if (cat === 'music') return isMusicFact(d) && !isMorbidFact(d) && !isWarFact(d);
 
   // lists (default)
   return !isMorbidFact(d) && !isWarFact(d);
@@ -1609,7 +1488,7 @@ function matchesHistoricCategory(ev, category) {
 function loadHistoricDatesAndStart() {
   // Warm up the pool so generating the next date doesn't need dozens of network calls.
   if (!historicMode) return;
-  warmHistoricPool({ minSize: 30, showStatus: false, scanDays: 60 });
+  warmHistoricPool({ minSize: 22, showStatus: false });
 }
 
 
@@ -1630,18 +1509,7 @@ function generateDate() {
 
       // Ensure we have at least 1 candidate in the pool.
       if (availableHistoricDates.length === 0) {
-        // 1) Normal scan (fast-ish)
-        await warmHistoricPool({ minSize: 28, showStatus: true });
-
-        // 2) Sparse century/category? Scan a bigger slice of the year.
-        if (availableHistoricDates.length === 0) {
-          await warmHistoricPool({ minSize: 28, showStatus: false, scanDays: 420 });
-        }
-
-        // 3) Still nothing? Relax the minimum description length (helps with short-but-good facts like album releases).
-        if (availableHistoricDates.length === 0) {
-          await warmHistoricPool({ minSize: 28, showStatus: false, scanDays: 420, minDescLen: 0 });
-        }
+        await warmHistoricPool({ minSize: 18, showStatus: true });
       }
 
       if (availableHistoricDates.length === 0) {
