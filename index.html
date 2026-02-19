@@ -1933,6 +1933,8 @@ document.getElementById('centurySelect').addEventListener('change', () => {
       let reactionTimerInterval = null;   // keep your existing var name if you like
       let reactionTimerRunning  = false;  // new guard flag
 
+      // NEW: remember user-selected TTS voice
+      let selectedVoiceName = null;
 
       let audioUnlocked = false;
 
@@ -1982,26 +1984,101 @@ document.getElementById('centurySelect').addEventListener('change', () => {
         el.style.color = colors[mode] || '#baffd1';
       }
 
+      // UPDATED: loadVoices now populates <select> and shows picker
       function loadVoices() {
-        loadedVoices = window.speechSynthesis ? (window.speechSynthesis.getVoices() || []) : [];
+        if (!('speechSynthesis' in window)) return;
+        loadedVoices = window.speechSynthesis.getVoices() || [];
+
+        const voiceSelect = document.getElementById('voiceSelect');
+        const pickerContainer = document.getElementById('voicePickerContainer');
+        if (!voiceSelect) return;
+
+        voiceSelect.innerHTML = '';
+
+        if (!loadedVoices.length) {
+          pickerContainer.style.display = 'none';
+          return;
+        }
+
+        const englishVoices = loadedVoices.filter(v => /^en(-|_)/i.test(v.lang));
+        const otherVoices = loadedVoices.filter(v => !/^en(-|_)/i.test(v.lang));
+
+        function appendOptions(list) {
+          list.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.name;
+            opt.textContent = `${v.name} (${v.lang})`;
+            voiceSelect.appendChild(opt);
+          });
+        }
+
+        // Prefer English at top
+        appendOptions(englishVoices);
+        appendOptions(otherVoices);
+
+        // Restore previously chosen voice if possible
+        if (selectedVoiceName) {
+          const match = [...voiceSelect.options].find(o => o.value === selectedVoiceName);
+          if (match) {
+            voiceSelect.value = selectedVoiceName;
+          }
+        } else if (englishVoices.length) {
+          // default to first English
+          voiceSelect.value = englishVoices[0].name;
+          selectedVoiceName = englishVoices[0].name;
+        } else if (loadedVoices.length) {
+          // or first voice
+          voiceSelect.value = loadedVoices[0].name;
+          selectedVoiceName = loadedVoices[0].name;
+        }
+
+        pickerContainer.style.display = 'block';
       }
+
       if ('speechSynthesis' in window) {
         loadVoices();
         window.speechSynthesis.onvoiceschanged = loadVoices;
       }
+
+      // Handle user changing voice from the dropdown
+      const voiceSelectEl = document.getElementById('voiceSelect');
+      if (voiceSelectEl) {
+        voiceSelectEl.addEventListener('change', () => {
+          selectedVoiceName = voiceSelectEl.value || null;
+        });
+      }
+
+      // UPDATED: prefer user selection / male-ish English voices
       function pickExpressiveVoice() {
-        const preferred = [
-          /Google US English/i,
-          /Google UK English Female/i,
-          /Samantha/i,
-          /Victoria/i
+        if (!loadedVoices || !loadedVoices.length) return null;
+
+        // 1) user-selected voice wins
+        if (selectedVoiceName) {
+          const chosen = loadedVoices.find(v => v.name === selectedVoiceName);
+          if (chosen) return chosen;
+        }
+
+        // 2) try to guess male English by name pattern (including Brian/Bryan)
+        const maleNamePatterns = [
+          /brian/i, /bryan/i,
+          /david/i, /daniel/i, /george/i, /michael/i, /mike/i,
+          /allan/i, /allen/i, /alex/i, /andrew/i,
+          /mark/i, /matthew/i, /paul/i, /james/i,
+          /male/i, /en-us.*male/i
         ];
-        for (const rx of preferred) {
-          const v = loadedVoices.find(v => rx.test(v.name));
+
+        const englishVoices = loadedVoices.filter(v => /^en(-|_)/i.test(v.lang));
+
+        for (const pat of maleNamePatterns) {
+          const v = englishVoices.find(v => pat.test(v.name));
           if (v) return v;
         }
-        const anyEN = loadedVoices.find(v => /en(-|_)?/i.test(v.lang));
-        return anyEN || loadedVoices[0] || null;
+
+        // 3) any English voice
+        if (englishVoices.length) return englishVoices[0];
+
+        // 4) anything
+        return loadedVoices[0] || null;
       }
 
       async function ensureMicPermissionOnce() {
