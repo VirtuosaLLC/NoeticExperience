@@ -2328,16 +2328,6 @@ document.getElementById('centurySelect').addEventListener('change', () => {
         : `The correct day was ${correctDay}.`;
     }
 
-    // --- If in historic mode + voice mode, say the fun fact as well
-    if (historicMode && voiceRoundActive) {
-      // Try to get the fun fact DOM content
-      const funFactNode = document.querySelector('.funfact-desc');
-      if (funFactNode && funFactNode.textContent.trim().length > 0) {
-        // Add a pause before fun fact for clarity
-        line += ` Did you know? On this day, ${funFactNode.textContent.trim()}`;
-      }
-    }
-
     const u = new SpeechSynthesisUtterance(line);
     const v = pickExpressiveVoice();
     if (v) u.voice = v;
