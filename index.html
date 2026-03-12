@@ -734,6 +734,7 @@
       <option value="elsalvador">Facts: El Salvador</option>
       <option value="mexico">Facts: Mexico</option>
       <option value="japan">Facts: Japan</option>
+      <option value="test">Facts: Test</option>
 </select>
   </div>
 
@@ -796,6 +797,204 @@ let historicPlan = null;            // { key, order:[{m,d}], cursor:number }
 let historicPoolDedup = new Set();  // de-dup within a pool build
 let historicBuilding = false;
 let historicBuildAbort = null;
+
+// --- TEST CATEGORY (CSV DATABASE) ---
+let testDatabase = [];
+let testDatabaseLoaded = false;
+let testDatabasePromise = null;
+
+function parseCSVLine(line) {
+  const out = [];
+  let cur = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === ',' && !inQuotes) {
+      out.push(cur);
+      cur = '';
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  out.push(cur);
+  return out;
+}
+
+function normalizeTestRow(row) {
+  if (!row || row.length < 2) return null;
+
+  const rawDate = (row[0] || '').trim();
+  const rawEvent = (row.slice(1).join(',') || '').trim();
+  if (!rawDate || !rawEvent) return null;
+
+  const match = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10) - 1;
+  const day = parseInt(match[3], 10);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+
+  return {
+    year,
+    month,
+    day,
+    event: rawEvent
+  };
+}
+
+const embeddedTestCSV = String.raw`date,event
+1979-02-11,Iranian Revolution establishes Islamic Republic hostile to Israel
+1984-01-07,Iran begins supporting Hezbollah operations against Israel in Lebanon
+1983-04-18,Hezbollah bombing of US Embassy in Beirut linked to Iranian support
+1983-10-23,Beirut barracks bombing by Iran-backed militants
+1985-05-22,Hezbollah hostage campaign against Western allies of Israel begins
+1992-02-16,Hezbollah leader Abbas al-Musawi killed by Israeli airstrike
+1992-03-17,Iranian-linked bombing of Israeli embassy in Buenos Aires
+1994-07-18,AMIA Jewish center bombing in Argentina tied to Iranian operatives
+1996-04-11,Israeli Operation Grapes of Wrath against Hezbollah
+2000-05-23,Israel withdraws from southern Lebanon ending 18-year occupation
+2000-10-07,Hezbollah cross-border raid escalates tensions with Israel
+2006-07-12,Hezbollah kidnaps Israeli soldiers triggering Lebanon war
+2006-07-14,Hezbollah fires Iranian-supplied missiles at Israeli cities
+2006-07-19,Israeli airstrikes destroy Hezbollah rocket launchers
+2006-08-14,UN ceasefire ends Lebanon war
+2007-09-06,Israel destroys Syrian nuclear reactor Operation Orchard
+2009-09-01,Stuxnet cyberattack begins targeting Iranian nuclear program
+2010-06-01,Stuxnet virus discovered damaging Iranian centrifuges
+2010-01-12,Iranian nuclear scientist Massoud Ali-Mohammadi assassinated
+2010-11-29,Iranian scientist Majid Shahriari assassinated
+2011-07-23,Iranian scientist Darioush Rezaeinejad assassinated
+2011-11-12,Explosion at IRGC missile base kills Hassan Tehrani Moghaddam
+2012-01-11,Iranian nuclear scientist Mostafa Ahmadi Roshan assassinated
+2012-02-13,Iran-linked attack targets Israeli diplomats in India
+2012-07-18,Burgas bus bombing kills Israeli tourists in Bulgaria
+2013-01-30,Israel strikes Syrian convoy carrying Iranian weapons
+2013-05-05,Israeli airstrikes hit Iranian missile shipments near Damascus
+2015-01-18,Israeli strike kills Iranian general near Golan Heights
+2015-07-14,Iran nuclear deal JCPOA signed
+2016-01-16,Iran nuclear sanctions lifted under deal
+2017-02-01,Israel strikes Iranian weapons shipments in Syria
+2018-04-09,Israeli airstrike hits Iranian base in Syria
+2018-05-08,United States withdraws from Iran nuclear deal
+2018-05-10,Israel launches major strikes on Iranian forces in Syria
+2019-01-21,Israel strikes Iranian military sites near Damascus
+2019-08-24,Israel strikes Iranian drone base in Syria
+2019-08-25,Israeli drones strike Hezbollah facility in Beirut
+2020-01-03,Qasem Soleimani killed by US drone strike
+2020-07-02,Explosion damages Natanz nuclear facility
+2020-11-27,Mohsen Fakhrizadeh assassinated near Tehran
+2021-04-11,Sabotage damages Natanz centrifuge hall
+2021-06-02,Iranian warship Kharg sinks after explosion
+2021-07-29,Drone attack hits Israeli-linked tanker Mercer Street
+2022-04-01,Israeli airstrikes intensify against Iranian positions in Syria
+2023-01-29,Drone attack hits Iranian military facility in Isfahan
+2023-04-01,Israeli strike kills Iranian commanders in Syria
+2023-10-07,Hamas attack on Israel backed by Iran begins Gaza war
+2023-10-08,Hezbollah begins rocket attacks on Israel northern border
+2023-10-19,Israeli strikes hit Iranian-backed militias in Syria
+2023-11-01,Houthi attacks on Red Sea shipping begin
+2023-12-01,US strikes Iranian-backed militias in Iraq and Syria
+2024-01-01,Israel intensifies strikes on Iranian positions in Syria
+2024-02-01,Hezbollah missile attacks escalate along Israeli border
+2024-03-01,Israeli strike kills IRGC commander in Damascus
+2024-04-01,Israeli airstrike hits Iranian consulate in Damascus
+2024-04-14,Iran launches massive drone and missile attack on Israel
+2024-04-19,Israeli strike hits Iranian air defense near Isfahan
+2024-05-01,Israel increases strikes on Iranian proxy militias
+2024-06-01,Hezbollah launches large rocket barrages into Israel
+2024-07-31,Hamas leader Ismail Haniyeh assassinated in Tehran
+2024-09-23,Israel launches large offensive against Hezbollah
+2024-09-27,Hezbollah leader Hassan Nasrallah killed in Israeli strike
+2024-10-01,Iran fires ballistic missiles toward Israel
+2024-10-17,Hamas leader Yahya Sinwar killed by Israeli forces
+2024-10-26,Israeli airstrikes target Iranian facilities
+2024-11-27,Israel Hezbollah ceasefire announced
+2024-12-08,Syrian government collapses reducing Iranian regional influence
+2025-01-19,Gaza ceasefire begins
+2025-02-01,Iran expands ballistic missile production
+2025-03-01,Israel strikes Iranian weapons shipments in Syria
+2025-04-01,Iran threatens retaliation against Israel
+2025-05-01,Israeli intelligence warns of Iranian nuclear escalation
+2025-06-12,IAEA declares Iran non compliant with nuclear obligations
+2025-06-13,Israel launches major airstrikes on Iran
+2025-06-14,Iran launches missile retaliation
+2025-06-15,Iranian drones strike Israeli targets
+2025-06-16,Israeli airstrikes hit Iranian missile bases
+2025-06-17,Iran launches drone swarm toward Israel
+2025-06-19,United States strikes Iranian nuclear facilities
+2025-06-22,US bombs Natanz Fordow and Isfahan nuclear sites
+2025-06-23,Iran fires missiles at US base in Qatar
+2025-06-24,Ceasefire ends 12 day Israel Iran war
+2025-07-01,Iranian proxy militias continue attacks in Syria
+2025-08-01,Iran accelerates drone warfare development
+2025-09-01,Israel strikes Iranian weapons depots in Syria
+2025-10-01,Iranian missile exercises intensify
+2025-11-01,Hezbollah border attacks resume
+2025-12-01,Israel warns of renewed Iranian escalation
+2025-12-15,Israeli military conducts major Iran war drills
+2025-12-20,Iranian missile forces placed on alert
+2025-12-24,Hezbollah rocket barrage fired toward Israel
+2025-12-26,Israeli airstrike hits Hezbollah weapons depot
+2025-12-28,Iranian drone activity increases near Israeli airspace
+2025-12-30,Iranian missile readiness drill conducted
+2025-12-31,Iran Israel tensions remain high at years end
+`;
+
+async function loadTestDatabase() {
+  if (testDatabaseLoaded) return testDatabase;
+  if (testDatabasePromise) return testDatabasePromise;
+
+  testDatabasePromise = (async () => {
+    let csvText = '';
+
+    try {
+      const res = await fetch('iran_israel_conflict_dates.csv');
+      if (res.ok) csvText = await res.text();
+    } catch (_) {}
+
+    if (!csvText || !csvText.trim()) {
+      csvText = embeddedTestCSV;
+    }
+
+    const lines = csvText.replace(/^\ufeff/, '').split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (!lines.length) {
+      testDatabase = [];
+      testDatabaseLoaded = true;
+      return testDatabase;
+    }
+
+    const rows = lines.slice(1);
+    testDatabase = rows
+      .map(parseCSVLine)
+      .map(normalizeTestRow)
+      .filter(Boolean);
+
+    testDatabaseLoaded = true;
+    return testDatabase;
+  })();
+
+  try {
+    return await testDatabasePromise;
+  } finally {
+    testDatabasePromise = null;
+  }
+}
 
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -889,7 +1088,8 @@ const descLenDefaults = {
   usa: 18,
   mexico: 18,
   japan: 18,
-  elsalvador: 14
+  elsalvador: 14,
+  test: 0
 };
 
 async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = null, minDescLen = null } = {}) {
@@ -911,7 +1111,8 @@ async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = n
     usa: 220,
     mexico: 240,
     japan: 220,
-    elsalvador: 360
+    elsalvador: 360,
+    test: 0
   };
   const targetDefaults = {
     lists: 50,
@@ -922,13 +1123,42 @@ async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = n
     usa: 45,
     mexico: 45,
     japan: 45,
-    elsalvador: 28
+    elsalvador: 28,
+    test: 95
   };
 
   const targetSize = Math.max(minSize, targetDefaults[category] || 25);
   const maxDaysToScan = (scanDays != null ? scanDays : (scanDefaults[category] || 120));
 
   const descMin = (minDescLen != null ? minDescLen : (descLenDefaults[category] ?? 20));
+
+  if (category === 'test') {
+    await loadTestDatabase();
+
+    // For the CSV-backed test category, build the pool once per century/category key
+    // and then let generateDate() consume it without refilling in the background.
+    if (availableHistoricDates.length > 0) return;
+
+    const centuryStart = century;
+    const centuryEnd = century + 100;
+    const filtered = testDatabase.filter(item => item.year >= centuryStart && item.year < centuryEnd);
+
+    availableHistoricDates.length = 0;
+    for (const item of filtered) {
+      availableHistoricDates.push({
+        year: item.year,
+        month: item.month,
+        day: item.day,
+        event: {
+          year: item.year,
+          description: item.event,
+          wikipedia: null,
+          source: 'test-csv'
+        }
+      });
+    }
+    return;
+  }
 
   if (availableHistoricDates.length >= targetSize) return;
 
@@ -1272,7 +1502,8 @@ document.addEventListener('DOMContentLoaded', function() {
         usa: "USA",
         elsalvador: "El Salvador",
         mexico: "Mexico",
-        japan: "Japan"
+        japan: "Japan",
+        test: "Test"
       };
 
       if (cat === 'lists') return "No historic fact found for that century. Try another century.";
@@ -1601,6 +1832,7 @@ function matchesHistoricCategory(ev, category) {
     return isCountryFact(d, cat) && !isMorbidFact(d) && !isWarFact(d);
   }
 
+  if (cat === 'test') return false;
   if (cat === 'war') return isWarFact(d);
   if (cat === 'sports') return isSportsFact(d) && !isWarFact(d);
   if (cat === 'horror') return isHorrorFact(d) && !isWarFact(d);
@@ -1614,6 +1846,7 @@ function matchesHistoricCategory(ev, category) {
 
 function loadHistoricDatesAndStart() {
   // Warm up the pool so generating the next date doesn't need dozens of network calls.
+  loadTestDatabase().catch(() => {});
   if (!historicMode) return;
   warmHistoricPool({ minSize: 30, showStatus: false, scanDays: 60 });
 }
@@ -1625,6 +1858,7 @@ function generateDate() {
     clearInterval(timerInterval);
 
     if (historicMode) {
+
       const { key } = getHistoricKeyParts();
 
       // If the user changed century/category, reset the pool.
@@ -1670,7 +1904,9 @@ function generateDate() {
       });
 
       // Refill in the background when running low.
-      setTimeout(() => warmHistoricPoolInBackground(), 0);
+      if ((currentFactCategory || '').toLowerCase() !== 'test') {
+        setTimeout(() => warmHistoricPoolInBackground(), 0);
+      }
       return;
     }
 
