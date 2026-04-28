@@ -810,6 +810,7 @@ let testDatabasePromise = null;
 let musicDatabase = [];
 let musicDatabaseLoaded = false;
 let musicDatabasePromise = null;
+let lastMusicDecadePicked = null;
 
 const embeddedMusicDatabase = [
   {
@@ -11347,6 +11348,7 @@ function resetHistoricPool({ keepKey = false } = {}) {
 
   availableHistoricDates.length = 0;
   historicPoolDedup = new Set();
+  lastMusicDecadePicked = null;
 
   if (!keepKey) {
     historicPoolKey = "";
@@ -11456,14 +11458,15 @@ async function warmHistoricPool({ minSize = 25, showStatus = false, scanDays = n
   if (category === 'music') {
     await loadMusicDatabase();
 
-    if (availableHistoricDates.length > 0) return;
-
+    // Rebuild the music pool from the current JSON every time it becomes empty.
+    // Do NOT keep an old in-memory pool, because that can make the app feel stuck
+    // on the older 2000s entries after you update music_songs.json.
     const centuryStart = century;
     const centuryEnd = century + 100;
     const filtered = musicDatabase.filter(item => item.year >= centuryStart && item.year < centuryEnd);
 
     availableHistoricDates.length = 0;
-    for (const item of filtered) {
+    for (const item of shuffleArray([...filtered])) {
       availableHistoricDates.push({
         year: item.year,
         month: item.month,
@@ -12244,8 +12247,42 @@ function generateDate() {
       }
 
       // Pick one and remove it to reduce immediate repeats.
-      const idx = Math.floor(Math.random() * availableHistoricDates.length);
-      const pick = availableHistoricDates.splice(idx, 1)[0];
+      // For music, balance the 2000s century bucket by decade so 2010+ does not
+      // get buried under 2000-2009 entries.
+      let pick;
+      if ((currentFactCategory || '').toLowerCase() === 'music') {
+        const decadeGroups = new Map();
+        for (let i = 0; i < availableHistoricDates.length; i++) {
+          const ev = availableHistoricDates[i].event || {};
+          const decade = Number.isFinite(Number(ev.decade))
+            ? Number(ev.decade)
+            : Math.floor(Number(availableHistoricDates[i].year) / 10) * 10;
+          if (!decadeGroups.has(decade)) decadeGroups.set(decade, []);
+          decadeGroups.get(decade).push(i);
+        }
+
+        const decadeKeys = Array.from(decadeGroups.keys()).sort((a, b) => a - b);
+
+        // Force decade rotation instead of pure random decade choice.
+        // This prevents long streaks like 2000, 2001, 2004, 2009, etc.
+        let possibleDecades = decadeKeys;
+        if (lastMusicDecadePicked !== null && decadeKeys.length > 1) {
+          possibleDecades = decadeKeys.filter(decade => decade !== lastMusicDecadePicked);
+        }
+
+        const chosenDecade = possibleDecades[Math.floor(Math.random() * possibleDecades.length)];
+        lastMusicDecadePicked = chosenDecade;
+
+        const candidateIndexes = decadeGroups.get(chosenDecade);
+        const idx = candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)];
+        pick = availableHistoricDates.splice(idx, 1)[0];
+
+        // Useful while testing; remove this line later if you hate console noise.
+        console.log('[Music pick]', { chosenDecade, year: pick.year, song: pick.event && pick.event.song, remaining: availableHistoricDates.length });
+      } else {
+        const idx = Math.floor(Math.random() * availableHistoricDates.length);
+        pick = availableHistoricDates.splice(idx, 1)[0];
+      }
 
       const y = parseInt(pick.event.year);
       const dateObj = new Date(y, pick.month, pick.day);
